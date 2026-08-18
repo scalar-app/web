@@ -1,0 +1,34 @@
+@import 'tailwindcss';
+@import '@scalar/ui/styles.css';
+
+/* Tailwind utilities read the canonical @scalar/ui tokens. Do not add raw colors here. */
+@theme inline {
+  --color-background: var(--sc-color-background);
+  --color-surface: var(--sc-color-surface);
+  --color-raised: var(--sc-color-surface-raised);
+  --color-border: var(--sc-color-border);
+  --color-primary: var(--sc-color-text-primary);
+  --color-secondary: var(--sc-color-text-secondary);
+  --color-muted: var(--sc-color-text-muted);
+  --color-yellow: var(--sc-color-yellow);
+  --color-yellow-foreground: var(--sc-color-yellow-foreground);
+  --color-danger: var(--sc-color-danger);
+  --color-success: var(--sc-color-success);
+  --color-warning: var(--sc-color-warning);
+  --color-info: var(--sc-color-info);
+
+  --font-sans: var(--sc-font-sans);
+  --font-mono: var(--sc-font-mono);
+
+  --radius-sm: var(--sc-radius-sm);
+  --radius-md: var(--sc-radius-md);
+  --radius-lg: var(--sc-radius-lg);
+  --radius-xl: var(--sc-radius-xl);
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--sc-color-background);
+  color: var(--sc-color-text-primary);
+}

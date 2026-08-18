@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    steps:
+      # @scalar/ui and @scalar/sdk are linked from sibling checkouts until they are published.
+      - uses: actions/checkout@v4
+        with:
+          path: web
+      - uses: actions/checkout@v4
+        with:
+          repository: scalar-app/ui
+          path: ui
+      - uses: actions/checkout@v4
+        with:
+          repository: scalar-app/sdk
+          path: sdk
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.17.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            web/pnpm-lock.yaml
+            ui/pnpm-lock.yaml
+            sdk/pnpm-lock.yaml
+      - name: Build linked packages
+        run: |
+          pnpm --dir ui install --frozen-lockfile
+          pnpm --dir ui build
+          pnpm --dir sdk install --frozen-lockfile
+          pnpm --dir sdk build
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm lint
+        working-directory: web
+      - run: pnpm typecheck
+        working-directory: web
+      - run: pnpm test
+        working-directory: web
+      - run: pnpm build
+        working-directory: web
