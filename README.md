@@ -60,6 +60,8 @@ Design tokens come from `@scalar/ui`. `globals.css` maps them into Tailwind's th
 
 Approve is never the default. It is not focused automatically, Enter in the composer sends the question rather than approving a pending card, and once a card is decided its buttons are gone.
 
+Past conversations are reachable from History. Reopening one restores it, including its approval cards: a proposal you left pending is still approvable later, and one you already approved shows as done rather than offering itself again. Asking another question continues that same conversation; New starts a fresh one.
+
 Without `ANTHROPIC_API_KEY` on the API the page explains that Ask is not set up on this server, and the rest of Scalar works normally.
 
 ## Scripts
@@ -72,9 +74,9 @@ Unit tests for the time helpers, and component tests for `TaskRow`, `ApprovalCar
 
 ## Status
 
-Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of synced events, navigation), Spaces (list and create), Settings (account, sign out), Integrations (connect Google Calendar, per calendar sync status that polls while a sync runs, sync now, reconnect when access is revoked, disconnect with a keep or delete choice for imported events), Command palette (navigation, quick task capture, handoff to Ask, keyboard driven, combobox semantics), Ask (conversation with Scalar Command: answers from your own tasks and calendar, and approval cards for anything that would change them), responsive shell (sidebar on desktop, top bar and thumb reachable tab bar on phones).
+Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of synced events, navigation), Spaces (list and create), Settings (account, sign out), Integrations (connect Google Calendar, per calendar sync status that polls while a sync runs, sync now, reconnect when access is revoked, disconnect with a keep or delete choice for imported events), Command palette (navigation, quick task capture, handoff to Ask, keyboard driven, combobox semantics), Ask (conversation with Scalar Command: answers from your own tasks and calendar, approval cards for anything that would change them, and history of past conversations that can be reopened and continued), responsive shell (sidebar on desktop, top bar and thumb reachable tab bar on phones).
 
-Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, Gmail and Canvas integrations, notifications, Ask history (past threads are stored by the API but not yet browsable here), onboarding and usage modes.
+Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, Gmail and Canvas integrations, notifications, onboarding and usage modes.
 
 ## Contributing
 

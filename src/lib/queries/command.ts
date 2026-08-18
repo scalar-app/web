@@ -52,10 +52,11 @@ export function useCommandThreads(enabled = true) {
   });
 }
 
-export function useCommandThread(id: string | null) {
-  return useQuery({
-    queryKey: queryKeys.commandThread(id ?? 'none'),
-    queryFn: () => scalar.command.getThread(id ?? ''),
-    enabled: id !== null,
-  });
+/**
+ * Opening a past conversation is something a person does, not something a render implies, so it
+ * is a mutation. That keeps the resulting state change in the click handler instead of an effect
+ * that copies query data into state.
+ */
+export function useLoadThread() {
+  return useMutation({ mutationFn: (id: string) => scalar.command.getThread(id) });
 }

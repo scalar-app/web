@@ -1,8 +1,8 @@
 'use client';
 
-import type { CommandAction, CommandResponse } from '@scalar/sdk';
+import type { CommandAction, CommandResponse, CommandThreadDetail } from '@scalar/sdk';
 import { Button, EmptyState, Spinner, Textarea } from '@scalar/ui';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, History, SquarePen } from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -12,9 +12,10 @@ import {
   type KeyboardEvent,
 } from 'react';
 import { ApprovalCard } from '@/components/command/ApprovalCard';
+import { HistoryDialog } from '@/components/command/HistoryDialog';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
-import { isAiUnavailable, useAsk } from '@/lib/queries/command';
+import { isAiUnavailable, useAsk, useLoadThread } from '@/lib/queries/command';
 
 interface Turn {
   id: string;
@@ -31,6 +32,39 @@ const SUGGESTIONS = [
   'What does tomorrow look like?',
   'Find me two free hours on Thursday',
 ];
+
+/**
+ * Rebuilds a stored thread as turns.
+ *
+ * Messages are stored flat, alternating user then assistant. A user message opens a turn and the
+ * assistant message that follows completes it, so an unanswered question at the end of a thread
+ * still shows rather than being dropped.
+ */
+function toTurns(thread: CommandThreadDetail): Turn[] {
+  const turns: Turn[] = [];
+  for (const message of thread.messages) {
+    if (message.role === 'user') {
+      turns.push({
+        id: message.id,
+        question: message.content,
+        answer: null,
+        actions: [],
+        stopReason: null,
+        refusalCategory: null,
+        failed: false,
+      });
+      continue;
+    }
+    const open = turns.at(-1);
+    if (!open || open.answer !== null) continue;
+    open.answer = message.content;
+    open.actions = message.actions;
+    open.stopReason = message.stopReason as Turn['stopReason'];
+    open.refusalCategory = message.refusalCategory;
+  }
+  // A question whose answer never arrived reads as a failure rather than as a pending request.
+  return turns.map((turn) => (turn.answer === null ? { ...turn, failed: true } : turn));
+}
 
 function answerText(turn: Turn): string {
   if (turn.failed) return 'Something went wrong answering that. Try asking again.';
@@ -55,6 +89,9 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
   const ask = useAsk();
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
+  const loadThread = useLoadThread();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   // Refs rather than state so `send` stays stable across renders: it is called from an effect,
@@ -67,6 +104,28 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [turns]);
+
+  // A thread opened from history replaces the conversation on screen and becomes the one the next
+  // question continues.
+  async function openThread(id: string) {
+    try {
+      const thread = await loadThread.mutateAsync(id);
+      setTurns(toTurns(thread));
+      threadIdRef.current = thread.id;
+      setActiveThreadId(thread.id);
+      turnCount.current = thread.messages.length;
+    } catch {
+      /* shown through loadThread.isError */
+    }
+  }
+
+  function startNew() {
+    setTurns([]);
+    setQuestion('');
+    threadIdRef.current = null;
+    setActiveThreadId(null);
+    loadThread.reset();
+  }
 
   const send = useCallback(
     async (text: string) => {
@@ -95,6 +154,7 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
           ...(threadIdRef.current ? { threadId: threadIdRef.current } : {}),
         });
         threadIdRef.current = result.threadId;
+        setActiveThreadId(result.threadId);
         setTurns((current) =>
           current.map((turn) =>
             turn.id === id
@@ -152,11 +212,57 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
 
   return (
     <>
-      <PageHeader title="Ask" description="Questions about your work, answered from your data." />
+      <PageHeader
+        title="Ask"
+        description="Questions about your work, answered from your data."
+        actions={
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={startNew}
+              disabled={turns.length === 0}
+              className="min-h-11 md:min-h-0"
+            >
+              <SquarePen size={14} aria-hidden />
+              New
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setHistoryOpen(true)}
+              className="min-h-11 md:min-h-0"
+            >
+              <History size={14} aria-hidden />
+              History
+            </Button>
+          </>
+        }
+      />
+
+      <HistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        onSelect={(id) => void openThread(id)}
+        activeThreadId={activeThreadId}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex-1 overflow-y-auto pb-4">
-          {turns.length === 0 ? (
+          {loadThread.isPending ? (
+            <p className="flex items-center gap-2 py-4 text-[13px] text-muted">
+              <Spinner size={13} label="Loading conversation" />
+              Loading that conversation
+            </p>
+          ) : null}
+
+          {loadThread.isError ? (
+            <div className="py-4">
+              <ErrorNotice title="That conversation could not be opened." />
+            </div>
+          ) : null}
+
+          {turns.length === 0 && !loadThread.isPending ? (
             <div className="mt-2">
               <p className="text-[13px] text-secondary">
                 Ask about your tasks and calendar. Scalar reads to answer, and asks before it
