@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog, Input, Kbd, StatusLight } from '@scalar/ui';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useCreateTask } from '@/lib/queries/tasks';
@@ -20,8 +20,10 @@ export interface CommandPaletteProps {
 }
 
 /**
- * Stage 1 palette: navigation and quick task capture. Natural language commands arrive with the
- * AI layer; the UI is built so those results slot into the same list.
+ * Navigation, quick task capture, and a handoff to Ask.
+ *
+ * A typed phrase can be a task title or a question, and the palette does not guess: both are
+ * offered, with capture first because it is the one that cannot surprise anybody.
  */
 export function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const router = useRouter();
@@ -59,7 +61,13 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
         router.push('/tasks');
       },
     };
-    return [create, ...matches];
+    const askScalar: Command = {
+      id: 'ask',
+      label: `Ask Scalar: "${trimmed}"`,
+      hint: 'Ask',
+      run: () => router.push(`/ask?q=${encodeURIComponent(trimmed)}`),
+    };
+    return [create, askScalar, ...matches];
   }, [trimmed, router, createTask]);
 
   const clamped = Math.min(active, Math.max(commands.length - 1, 0));
@@ -106,7 +114,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               setActive(0);
             }}
             onKeyDown={onKeyDown}
-            placeholder="Type a command or a task title"
+            placeholder="Type a command, a task title, or a question"
             aria-label="Command"
             aria-controls={listId}
             aria-activedescendant={
@@ -142,6 +150,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
               >
                 <span className="flex items-center gap-2">
                   {command.id === 'task:create' ? <Plus size={14} aria-hidden /> : null}
+                  {command.id === 'ask' ? <Sparkles size={14} aria-hidden /> : null}
                   {command.label}
                 </span>
                 {command.hint ? <Kbd>{command.hint}</Kbd> : null}

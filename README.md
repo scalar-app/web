@@ -54,19 +54,27 @@ Principles: the API is the source of truth for authentication (the shell asks `/
 
 Design tokens come from `@scalar/ui`. `globals.css` maps them into Tailwind's theme, so utilities like `bg-surface`, `text-secondary` and `text-yellow` are the only way colors enter this app.
 
+## Ask
+
+`/ask` is a conversation with Scalar Command. Questions are answered by reading your tasks and calendar. Anything that would change them arrives as an approval card instead: it says what would happen, in plain language, and does nothing until you press Approve.
+
+Approve is never the default. It is not focused automatically, Enter in the composer sends the question rather than approving a pending card, and once a card is decided its buttons are gone.
+
+Without `ANTHROPIC_API_KEY` on the API the page explains that Ask is not set up on this server, and the rest of Scalar works normally.
+
 ## Scripts
 
 `pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint` (ESLint and Prettier), `pnpm typecheck` (`next typegen` then `tsc`), `pnpm test` (Vitest, jsdom), `pnpm format`.
 
 ## Tests
 
-Unit tests for the time helpers and a component test for `TaskRow`. Critical journeys (sign in, create task, complete task, Today) are covered by the API integration suite today; Playwright end to end tests will be added when the API has an easy seeded fixture mode.
+Unit tests for the time helpers, and component tests for `TaskRow`, `ApprovalCard` and `AskView`. The approval tests are the ones to keep passing: they pin down that a proposed change does nothing until somebody presses Approve. Critical journeys (sign in, create task, complete task, Today) are covered by the API integration suite today; Playwright end to end tests will be added when the API has an easy seeded fixture mode.
 
 ## Status
 
-Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of synced events, navigation), Spaces (list and create), Settings (account, sign out), Integrations (connect Google Calendar, per calendar sync status that polls while a sync runs, sync now, reconnect when access is revoked, disconnect with a keep or delete choice for imported events), Command palette (navigation, quick task capture, keyboard driven, combobox semantics).
+Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of synced events, navigation), Spaces (list and create), Settings (account, sign out), Integrations (connect Google Calendar, per calendar sync status that polls while a sync runs, sync now, reconnect when access is revoked, disconnect with a keep or delete choice for imported events), Command palette (navigation, quick task capture, handoff to Ask, keyboard driven, combobox semantics), Ask (conversation with Scalar Command: answers from your own tasks and calendar, and approval cards for anything that would change them), responsive shell (sidebar on desktop, top bar and thumb reachable tab bar on phones).
 
-Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, Gmail and Canvas integrations, notifications, AI commands, onboarding and usage modes, mobile navigation (the layout is desktop first for now).
+Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, Gmail and Canvas integrations, notifications, Ask history (past threads are stored by the API but not yet browsable here), onboarding and usage modes.
 
 ## Contributing
 

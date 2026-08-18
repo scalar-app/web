@@ -32,7 +32,7 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-background px-3 py-4">
+    <aside className="hidden h-full w-56 shrink-0 flex-col border-r border-border bg-background px-3 py-4 md:flex">
       <div className="mb-6 px-3">
         <Logo />
       </div>

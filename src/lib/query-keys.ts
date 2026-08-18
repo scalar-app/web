@@ -6,4 +6,6 @@ export const queryKeys = {
   spaces: ['spaces'] as const,
   events: (from: string, to: string) => ['events', from, to] as const,
   integrations: ['integrations'] as const,
+  commandThreads: ['command', 'threads'] as const,
+  commandThread: (id: string) => ['command', 'threads', id] as const,
 } as const;

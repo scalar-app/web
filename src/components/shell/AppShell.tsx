@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSession } from '@/lib/queries/auth';
 import { CommandPalette } from './CommandPalette';
+import { MobileTabBar, MobileTopBar } from './MobileNav';
 import { Sidebar } from './Sidebar';
 
 /**
@@ -35,11 +36,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    // A row on desktop with the sidebar beside the content, a column on phones with the bars
+    // stacked above and below it. Only the middle scrolls, so the tab bar never drifts away.
+    <div className="flex h-[100dvh] flex-col overflow-hidden md:flex-row">
+      <MobileTopBar onOpenCommand={() => setCommandOpen(true)} />
       <Sidebar onOpenCommand={() => setCommandOpen(true)} />
-      <main id="main" className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-8 py-10">{children}</div>
+      <main id="main" className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-3xl flex-col px-4 py-6 md:px-8 md:py-10">
+          {children}
+        </div>
       </main>
+      <MobileTabBar />
       <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
     </div>
   );

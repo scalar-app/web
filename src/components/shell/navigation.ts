@@ -1,4 +1,13 @@
-import { Calendar, Inbox, LayoutGrid, Search, Settings, SquareCheck, Sun } from 'lucide-react';
+import {
+  Calendar,
+  Inbox,
+  LayoutGrid,
+  Search,
+  Settings,
+  Sparkles,
+  SquareCheck,
+  Sun,
+} from 'lucide-react';
 import type { ComponentType } from 'react';
 
 export interface NavItem {
@@ -11,6 +20,7 @@ export interface NavItem {
 
 export const primaryNav: readonly NavItem[] = [
   { href: '/today', label: 'Today', icon: Sun, key: 't' },
+  { href: '/ask', label: 'Ask', icon: Sparkles, key: 'a' },
   { href: '/inbox', label: 'Inbox', icon: Inbox, key: 'i' },
   { href: '/tasks', label: 'Tasks', icon: SquareCheck, key: 'k' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, key: 'c' },
