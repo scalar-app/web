@@ -1,13 +1,18 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { AskView } from './AskView';
 
 export const metadata: Metadata = { title: 'Ask' };
 
-/** `?q=` carries a question handed over from the command palette. */
-export default async function AskPage({ searchParams }: PageProps<'/ask'>) {
-  const params = await searchParams;
-  const raw = params.q;
-  const question = Array.isArray(raw) ? raw[0] : raw;
-
-  return <AskView {...(question ? { initialQuestion: question } : {})} />;
+/**
+ * `?q=` carries a question handed over from the command palette. It is read in the client so this
+ * route stays static, which is what lets the same build be packaged into the desktop and mobile
+ * apps. `useSearchParams` needs a Suspense boundary above it.
+ */
+export default function AskPage() {
+  return (
+    <Suspense fallback={null}>
+      <AskView />
+    </Suspense>
+  );
 }

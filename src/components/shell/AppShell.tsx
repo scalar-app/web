@@ -3,8 +3,10 @@
 import { Spinner, useHotkey } from '@scalar/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
+import { isApiConfigured } from '@/lib/api';
 import { useSession } from '@/lib/queries/auth';
 import { CommandPalette } from './CommandPalette';
+import { ServerSetup } from './ServerSetup';
 import { MobileTabBar, MobileTopBar } from './MobileNav';
 import { Sidebar } from './Sidebar';
 
@@ -13,6 +15,13 @@ import { Sidebar } from './Sidebar';
  * quiet loading state, and on 401 we send the user to sign in.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  // Resolved once on mount: reading storage during render would differ between the server render
+  // and the browser, and changing it reloads the page anyway.
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  useEffect(() => {
+    setConfigured(isApiConfigured());
+  }, []);
+
   const session = useSession();
   const router = useRouter();
   const [commandOpen, setCommandOpen] = useState(false);
@@ -23,7 +32,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (session.status === 'signed-out') router.replace('/login');
   }, [session.status, router]);
 
-  if (session.status !== 'signed-in') {
+  if (configured === false) return <ServerSetup />;
+
+  if (configured === null || session.status !== 'signed-in') {
     return (
       <div
         className="flex min-h-screen items-center justify-center"

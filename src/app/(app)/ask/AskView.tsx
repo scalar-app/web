@@ -3,6 +3,7 @@
 import type { CommandAction, CommandResponse, CommandThreadDetail } from '@scalar/sdk';
 import { Button, EmptyState, Spinner, Textarea } from '@scalar/ui';
 import { ArrowUp, History, SquarePen } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import {
   useCallback,
   useEffect,
@@ -86,6 +87,8 @@ function answerText(turn: Turn): string {
  * Approve and Dismiss, and stays inert until one is pressed.
  */
 export function AskView({ initialQuestion }: { initialQuestion?: string }) {
+  const searchParams = useSearchParams();
+  const handedOver = initialQuestion ?? searchParams.get('q') ?? undefined;
   const ask = useAsk();
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -180,10 +183,10 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
 
   // A question handed over from the command palette is asked once, on arrival.
   useEffect(() => {
-    if (!initialQuestion || askedInitial.current) return;
+    if (!handedOver || askedInitial.current) return;
     askedInitial.current = true;
-    void send(initialQuestion);
-  }, [initialQuestion, send]);
+    void send(handedOver);
+  }, [handedOver, send]);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();

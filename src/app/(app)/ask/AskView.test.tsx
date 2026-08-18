@@ -11,6 +11,13 @@ const reject = vi.fn();
 const listThreads = vi.fn();
 const getThread = vi.fn();
 
+// AskView reads ?q= from the router. jsdom has no Next router, so the tests supply the query.
+let searchParams = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => searchParams,
+}));
+
 vi.mock('@/lib/api', () => ({
   scalar: {
     command: {
@@ -97,6 +104,7 @@ beforeEach(() => {
   reject.mockReset();
   listThreads.mockReset();
   getThread.mockReset();
+  searchParams = new URLSearchParams();
   listThreads.mockResolvedValue(THREAD_LIST);
   getThread.mockResolvedValue(THREAD_DETAIL);
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
@@ -222,9 +230,10 @@ describe('AskView', () => {
     expect(await screen.findByText(/not set up on this server/)).toBeInTheDocument();
   });
 
-  it('asks a handed over question straight away', async () => {
+  it('asks a question handed over in the query string straight away', async () => {
     ask.mockResolvedValue(response());
-    render(<AskView initialQuestion="what is due today?" />, { wrapper });
+    searchParams = new URLSearchParams('q=what is due today?');
+    render(<AskView />, { wrapper });
 
     await waitFor(() => {
       expect(ask).toHaveBeenCalledWith(expect.objectContaining({ message: 'what is due today?' }));
