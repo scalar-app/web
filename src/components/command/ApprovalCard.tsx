@@ -104,6 +104,9 @@ export function ApprovalCard({ action, onDecided }: ApprovalCardProps) {
               onClick={() => void onApprove()}
               disabled={busy}
               aria-label={`Approve: ${action.summary}`}
+              // A 44px target on phones. This is the most consequential control in the app and
+              // the one place a mis-tap costs something, so it is not a 26px button on a phone.
+              className="min-h-11 px-4 md:min-h-0 md:px-3"
             >
               {approve.isPending ? <Spinner size={13} /> : <Check size={14} aria-hidden />}
               Approve
@@ -114,6 +117,7 @@ export function ApprovalCard({ action, onDecided }: ApprovalCardProps) {
               onClick={() => void onReject()}
               disabled={busy}
               aria-label={`Dismiss: ${action.summary}`}
+              className="min-h-11 px-4 md:min-h-0 md:px-3"
             >
               <X size={14} aria-hidden />
               Dismiss
