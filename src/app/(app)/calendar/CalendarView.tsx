@@ -3,6 +3,7 @@
 import type { Event } from '@scalar/sdk';
 import { Button, Spinner } from '@scalar/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
@@ -99,8 +100,14 @@ export function CalendarView() {
         </ol>
       )}
       <p className="mt-6 text-[12px] text-muted">
-        External calendars are not connected yet. Events appear here once the Google Calendar
-        integration lands.
+        Events come from your connected calendars. Add one in{' '}
+        <Link
+          href="/settings/integrations"
+          className="text-secondary underline-offset-2 hover:text-primary"
+        >
+          Settings, Integrations
+        </Link>
+        .
       </p>
     </>
   );

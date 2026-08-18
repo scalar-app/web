@@ -2,6 +2,7 @@
 
 import type { Event, Task } from '@scalar/sdk';
 import { EmptyState, Spinner } from '@scalar/ui';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { TaskList } from '@/components/tasks/TaskList';
@@ -85,7 +86,14 @@ export function TodayView() {
       <Section title="Upcoming">
         {data.upcoming.length === 0 ? (
           <p className="py-3 text-[13px] text-muted">
-            No events today. Connect a calendar to see them here.
+            No events today.{' '}
+            <Link
+              href="/settings/integrations"
+              className="text-secondary underline-offset-2 hover:text-primary"
+            >
+              Connect a calendar
+            </Link>{' '}
+            to see them here.
           </p>
         ) : (
           <ul className="flex flex-col">

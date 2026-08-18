@@ -5,4 +5,5 @@ export const queryKeys = {
   task: (id: string) => ['tasks', 'detail', id] as const,
   spaces: ['spaces'] as const,
   events: (from: string, to: string) => ['events', from, to] as const,
+  integrations: ['integrations'] as const,
 } as const;

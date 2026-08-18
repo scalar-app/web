@@ -1,6 +1,7 @@
 'use client';
 
 import { Button, Panel } from '@scalar/ui';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { useLogout, useSession } from '@/lib/queries/auth';
@@ -33,8 +34,23 @@ export function SettingsView() {
           </Button>
         </div>
       </Panel>
+      <div className="mt-6">
+        <Panel title="Integrations">
+          <p className="text-[13px] text-secondary">
+            Connect Google Calendar so your events appear in Today and Calendar.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/settings/integrations"
+              className="sc-button sc-button--secondary sc-button--sm"
+            >
+              Manage integrations
+            </Link>
+          </div>
+        </Panel>
+      </div>
       <p className="mt-6 text-[12px] text-muted">
-        Integrations, notifications, usage modes and data export will appear here as they are built.
+        Notifications, usage modes and data export will appear here as they are built.
       </p>
     </>
   );

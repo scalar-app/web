@@ -42,6 +42,7 @@ src/app/
   login/, auth/verify/           magic link request and verification
   (app)/layout.tsx               authenticated shell (session guard, sidebar, ⌘K)
   (app)/today|inbox|tasks|calendar|spaces|search|settings
+  (app)/settings/integrations   connect, sync status, disconnect
 src/components/shell/            Sidebar, CommandPalette, AppShell, navigation
 src/components/tasks/            TaskRow, TaskList, QuickAddTask
 src/lib/api.ts                   the single SDK client
@@ -63,9 +64,9 @@ Unit tests for the time helpers and a component test for `TaskRow`. Critical jou
 
 ## Status
 
-Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of API events, navigation), Spaces (list and create), Settings (account, sign out), Command palette (navigation, quick task capture, keyboard driven, combobox semantics).
+Implemented: magic link sign in and sign out, session guard, Today (greeting, attention count, urgent, overdue, due today, upcoming events), Tasks (quick add, open/done/all filters, complete and reopen with optimistic updates), Calendar (week view of synced events, navigation), Spaces (list and create), Settings (account, sign out), Integrations (connect Google Calendar, per calendar sync status that polls while a sync runs, sync now, reconnect when access is revoked, disconnect with a keep or delete choice for imported events), Command palette (navigation, quick task capture, keyboard driven, combobox semantics).
 
-Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, integrations, notifications, AI commands, onboarding and usage modes, mobile navigation (the layout is desktop first for now).
+Not implemented yet: Inbox and Search (empty states explain why), task detail editing, space detail pages, Gmail and Canvas integrations, notifications, AI commands, onboarding and usage modes, mobile navigation (the layout is desktop first for now).
 
 ## Contributing
 
