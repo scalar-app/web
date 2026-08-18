@@ -2,7 +2,7 @@
 
 import { Spinner, useHotkey } from '@scalar/ui';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { isApiConfigured } from '@/lib/api';
 import { useSession } from '@/lib/queries/auth';
 import { CommandPalette } from './CommandPalette';
@@ -10,17 +10,18 @@ import { ServerSetup } from './ServerSetup';
 import { MobileTabBar, MobileTopBar } from './MobileNav';
 import { Sidebar } from './Sidebar';
 
+const subscribeToNothing = () => () => undefined;
+
 /**
  * Authenticated shell. The API decides whether the session is valid; while it answers we show a
  * quiet loading state, and on 401 we send the user to sign in.
  */
 export function AppShell({ children }: { children: ReactNode }) {
-  // Resolved once on mount: reading storage during render would differ between the server render
-  // and the browser, and changing it reloads the page anyway.
-  const [configured, setConfigured] = useState<boolean | null>(null);
-  useEffect(() => {
-    setConfigured(isApiConfigured());
-  }, []);
+  // The configured server lives outside React, in storage or in a value a native shell injected.
+  // Reading it through useSyncExternalStore keeps the prerendered HTML and the browser agreeing:
+  // the build assumes a server is configured, and the browser corrects that on hydration. It only
+  // changes by way of a reload, so there is nothing to subscribe to.
+  const configured = useSyncExternalStore(subscribeToNothing, isApiConfigured, () => true);
 
   const session = useSession();
   const router = useRouter();
@@ -32,9 +33,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (session.status === 'signed-out') router.replace('/login');
   }, [session.status, router]);
 
-  if (configured === false) return <ServerSetup />;
+  if (!configured) return <ServerSetup />;
 
-  if (configured === null || session.status !== 'signed-in') {
+  if (session.status !== 'signed-in') {
     return (
       <div
         className="flex min-h-screen items-center justify-center"
