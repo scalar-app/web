@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Logo } from '@/components/Logo';
 import { LoginForm } from './LoginForm';
 
 export const metadata: Metadata = { title: 'Sign in' };
@@ -7,9 +8,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center gap-2">
-          <span aria-hidden="true" className="block h-4 w-1 rounded-sm bg-yellow" />
-          <span className="text-sm font-semibold tracking-tight">Scalar</span>
+        <div className="mb-8">
+          <Logo size={20} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-1 text-[13px] text-secondary">We will email you a link. No password.</p>

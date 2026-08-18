@@ -3,6 +3,7 @@
 import { cx, Kbd } from '@scalar/ui';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Logo } from '../Logo';
 import { primaryNav, settingsNav, type NavItem } from './navigation';
 
 function NavLink({ item, active }: { item: NavItem; active: boolean }) {
@@ -32,9 +33,8 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-r border-border bg-background px-3 py-4">
-      <div className="mb-6 flex items-center gap-2 px-3">
-        <span aria-hidden="true" className="block h-4 w-1 rounded-sm bg-yellow" />
-        <span className="text-sm font-semibold tracking-tight">Scalar</span>
+      <div className="mb-6 px-3">
+        <Logo />
       </div>
 
       <button

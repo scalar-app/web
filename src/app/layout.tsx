@@ -6,6 +6,13 @@ export const metadata: Metadata = {
   title: { default: 'Scalar', template: '%s · Scalar' },
   description: 'One system for everything demanding your attention.',
   applicationName: 'Scalar',
+  icons: {
+    icon: [
+      { url: '/favicon.png', sizes: '64x64', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: '/icon-192.png',
+  },
 };
 
 export const viewport: Viewport = {
