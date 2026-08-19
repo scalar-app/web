@@ -1,7 +1,7 @@
 'use client';
 
 import type { CommandAction } from '@scalar/sdk';
-import { Badge, Button, Spinner } from '@scalar/ui';
+import { Badge, Button } from '@scalar/ui';
 import { Check, CircleAlert, X } from 'lucide-react';
 import { useState } from 'react';
 import { useApproveAction, useRejectAction } from '@/lib/queries/command';
@@ -103,12 +103,13 @@ export function ApprovalCard({ action, onDecided }: ApprovalCardProps) {
               variant="primary"
               onClick={() => void onApprove()}
               disabled={busy}
+              loading={approve.isPending}
+              iconStart={<Check size={14} aria-hidden />}
               aria-label={`Approve: ${action.summary}`}
               // A 44px target on phones. This is the most consequential control in the app and
               // the one place a mis-tap costs something, so it is not a 26px button on a phone.
               className="min-h-11 px-4 md:min-h-0 md:px-3"
             >
-              {approve.isPending ? <Spinner size={13} /> : <Check size={14} aria-hidden />}
               Approve
             </Button>
             <Button
@@ -116,10 +117,10 @@ export function ApprovalCard({ action, onDecided }: ApprovalCardProps) {
               variant="ghost"
               onClick={() => void onReject()}
               disabled={busy}
+              iconStart={<X size={14} aria-hidden />}
               aria-label={`Dismiss: ${action.summary}`}
               className="min-h-11 px-4 md:min-h-0 md:px-3"
             >
-              <X size={14} aria-hidden />
               Dismiss
             </Button>
           </div>

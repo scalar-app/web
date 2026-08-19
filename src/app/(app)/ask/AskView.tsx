@@ -225,18 +225,18 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
               variant="ghost"
               onClick={startNew}
               disabled={turns.length === 0}
+              iconStart={<SquarePen size={14} aria-hidden />}
               className="min-h-11 md:min-h-0"
             >
-              <SquarePen size={14} aria-hidden />
               New
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setHistoryOpen(true)}
+              iconStart={<History size={14} aria-hidden />}
               className="min-h-11 md:min-h-0"
             >
-              <History size={14} aria-hidden />
               History
             </Button>
           </>
@@ -337,9 +337,10 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
             type="submit"
             variant="primary"
             disabled={ask.isPending || question.trim().length === 0}
+            loading={ask.isPending}
             aria-label="Send question"
           >
-            {ask.isPending ? <Spinner size={14} /> : <ArrowUp size={14} aria-hidden />}
+            <ArrowUp size={14} aria-hidden />
           </Button>
         </form>
         <p className="pb-2 pt-2 text-[12px] text-muted">

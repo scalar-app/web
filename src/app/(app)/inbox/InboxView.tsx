@@ -51,14 +51,14 @@ function InboxRow({ task, spaces }: { task: Task; spaces: Space[] }) {
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {spaces.length > 0 ? (
           <Select
             aria-label={`Move "${task.title}" into a space`}
             defaultValue=""
             disabled={update.isPending}
             onChange={(event) => fileInto(event.target.value)}
-            className="min-h-11 md:min-h-0"
+            className="min-h-11 w-36 md:min-h-0"
           >
             <option value="" disabled>
               Move to space
@@ -75,11 +75,11 @@ function InboxRow({ task, spaces }: { task: Task; spaces: Space[] }) {
           size="sm"
           variant="primary"
           onClick={keep}
-          disabled={update.isPending}
+          loading={update.isPending}
+          iconStart={<Check size={14} aria-hidden />}
           aria-label={`Keep "${task.title}" and move it to your tasks`}
           className="min-h-11 md:min-h-0"
         >
-          {update.isPending ? <Spinner size={13} /> : <Check size={14} aria-hidden />}
           Keep
         </Button>
         <Button
@@ -87,10 +87,10 @@ function InboxRow({ task, spaces }: { task: Task; spaces: Space[] }) {
           variant="ghost"
           onClick={dismiss}
           disabled={update.isPending}
+          iconStart={<X size={14} aria-hidden />}
           aria-label={`Dismiss "${task.title}"`}
           className="min-h-11 md:min-h-0"
         >
-          <X size={14} aria-hidden />
           Dismiss
         </Button>
       </div>

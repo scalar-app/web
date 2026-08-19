@@ -1,10 +1,11 @@
 'use client';
 
 import { cx } from '@scalar/ui';
-import { Search } from 'lucide-react';
+import { Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '../Logo';
+import { useTasks } from '@/lib/queries/tasks';
 import { primaryNav, settingsNav, type NavItem } from './navigation';
 
 /**
@@ -14,16 +15,22 @@ import { primaryNav, settingsNav, type NavItem } from './navigation';
  * through Command, which is why the search button sits in the top bar rather than the tab bar.
  */
 
-/** The tab bar holds five at most; more than that and the targets get too small to hit. */
+/**
+ * The tab bar holds five at most; more than that and the targets get too small to hit.
+ *
+ * These are the five somebody moves between all day. Settings is not one of them, so it sits in
+ * the top bar instead: keeping it here would have cost the place Inbox needs, and Inbox is the
+ * screen that accumulates work while you are not looking.
+ */
 const TABS: readonly NavItem[] = [
   primaryNav[0]!, // Today
+  primaryNav[2]!, // Inbox
   primaryNav[1]!, // Ask
   primaryNav[3]!, // Tasks
   primaryNav[4]!, // Calendar
-  settingsNav,
 ];
 
-function Tab({ item, active }: { item: NavItem; active: boolean }) {
+function Tab({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
   return (
     <Link
@@ -35,7 +42,15 @@ function Tab({ item, active }: { item: NavItem; active: boolean }) {
         active ? 'text-primary' : 'text-secondary',
       )}
     >
-      <Icon size={18} strokeWidth={1.75} aria-hidden />
+      <span className="relative">
+        <Icon size={18} strokeWidth={1.75} aria-hidden />
+        {badge !== undefined && badge > 0 ? (
+          <span
+            aria-hidden="true"
+            className="absolute -top-0.5 -right-1.5 h-1.5 w-1.5 rounded-full bg-yellow"
+          />
+        ) : null}
+      </span>
       <span>{item.label}</span>
       <span
         aria-hidden="true"
@@ -49,20 +64,31 @@ export function MobileTopBar({ onOpenCommand }: { onOpenCommand: () => void }) {
   return (
     <header className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
       <Logo />
-      <button
-        type="button"
-        onClick={onOpenCommand}
-        aria-label="Open command"
-        className="flex h-11 w-11 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
-      >
-        <Search size={18} strokeWidth={1.75} aria-hidden />
-      </button>
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={onOpenCommand}
+          aria-label="Open command"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
+        >
+          <Search size={18} strokeWidth={1.75} aria-hidden />
+        </button>
+        <Link
+          href={settingsNav.href}
+          aria-label="Settings"
+          className="flex h-11 w-11 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
+        >
+          <Settings size={18} strokeWidth={1.75} aria-hidden />
+        </Link>
+      </div>
     </header>
   );
 }
 
 export function MobileTabBar() {
   const pathname = usePathname();
+  const inbox = useTasks({ status: ['inbox'], limit: 100 });
+  const waiting = inbox.data?.data.length ?? 0;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   return (
@@ -73,7 +99,12 @@ export function MobileTabBar() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {TABS.map((item) => (
-        <Tab key={item.href} item={item} active={isActive(item.href)} />
+        <Tab
+          key={item.href}
+          item={item}
+          active={isActive(item.href)}
+          {...(item.href === '/inbox' ? { badge: waiting } : {})}
+        />
       ))}
     </nav>
   );
