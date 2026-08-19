@@ -1,20 +1,14 @@
-import { EmptyState } from '@scalar/ui';
 import type { Metadata } from 'next';
-import { PageHeader } from '@/components/PageHeader';
+import { Suspense } from 'react';
+import { SearchView } from './SearchView';
 
 export const metadata: Metadata = { title: 'Search' };
 
+/** `?q=` seeds the box, so a search can be linked to. Read in the client to keep this static. */
 export default function SearchPage() {
   return (
-    <>
-      <PageHeader
-        title="Search"
-        description="Across tasks, events, spaces and connected services."
-      />
-      <EmptyState
-        title="Search is on its way."
-        description="For now, Command (⌘K) jumps between pages and creates tasks. Full search across everything arrives with the search service."
-      />
-    </>
+    <Suspense fallback={null}>
+      <SearchView />
+    </Suspense>
   );
 }
