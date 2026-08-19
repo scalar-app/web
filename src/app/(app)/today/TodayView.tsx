@@ -1,13 +1,28 @@
 'use client';
 
-import type { Event, Task } from '@scalar/sdk';
-import { EmptyState, Spinner } from '@scalar/ui';
+import type { PlanPreview as PlanPreviewData } from '@scalar/sdk';
+import { Button, Spinner } from '@scalar/ui';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
-import { TaskList } from '@/components/tasks/TaskList';
-import { useToday } from '@/lib/queries/today';
-import { formatLongDay, formatTime } from '@/lib/time';
+import { AttentionList } from '@/components/home/AttentionList';
+import { UpNextCard } from '@/components/home/UpNextCard';
+import { PlanPreview } from '@/components/planner/PlanPreview';
+import { Timeline } from '@/components/timeline/Timeline';
+import { useHome } from '@/lib/queries/home';
+import { usePreviewPlan } from '@/lib/queries/planner';
+import { useTimeline } from '@/lib/queries/timeline';
+import { formatLongDay } from '@/lib/time';
+
+/**
+ * Home.
+ *
+ * The order is the argument: what to do next, then what needs a decision, then the day itself.
+ * Someone who reads only the first two lines should already know where they stand.
+ *
+ * Two queries rather than one, and they fail independently: a calendar problem should not take
+ * "what should I be doing" down with it.
+ */
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -21,94 +36,110 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function EventRow({ event }: { event: Event }) {
-  return (
-    <li className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 text-[13px] last:border-b-0">
-      <span className="truncate text-primary">{event.title}</span>
-      <span className="shrink-0 font-mono text-[12px] tabular-nums text-secondary">
-        {event.allDay ? 'All day' : `${formatTime(event.startsAt)}`}
-      </span>
-    </li>
-  );
-}
-
 function attentionSentence(count: number): string {
   if (count === 0) return 'Nothing needs your attention right now.';
   if (count === 1) return '1 thing needs your attention.';
-  return `${count} things need your attention.`;
-}
-
-function dedupe(...groups: Task[][]): Task[] {
-  const seen = new Set<string>();
-  const out: Task[] = [];
-  for (const group of groups) {
-    for (const task of group) {
-      if (seen.has(task.id)) continue;
-      seen.add(task.id);
-      out.push(task);
-    }
-  }
-  return out;
+  return `${String(count)} things need your attention.`;
 }
 
 export function TodayView() {
-  const today = useToday();
+  const home = useHome();
+  const timeline = useTimeline();
+  const previewPlan = usePreviewPlan();
+  const [proposed, setProposed] = useState<PlanPreviewData | null>(null);
 
-  if (today.isPending) {
+  async function planMyDay(): Promise<void> {
+    try {
+      setProposed(await previewPlan.mutateAsync({}));
+    } catch {
+      /* shown through previewPlan.isError */
+    }
+  }
+
+  if (home.isPending) {
     return (
       <div className="py-10 text-center" aria-busy="true">
         <Spinner size={14} />
       </div>
     );
   }
-  if (today.isError) {
-    return <ErrorNotice title="Today could not be loaded." onRetry={() => void today.refetch()} />;
+  if (home.isError) {
+    return <ErrorNotice title="Home could not be loaded." onRetry={() => void home.refetch()} />;
   }
 
-  const data = today.data;
-  const attention = dedupe(data.overdue, data.urgent, data.dueToday);
+  const data = home.data;
   const now = new Date();
+  const emptyTimeline = timeline.isSuccess && timeline.data.blocks.length === 0;
 
   return (
     <>
       <header className="mb-10">
         <p className="text-xl font-semibold tracking-tight">{data.greeting}</p>
         <p className="mt-1 text-[13px] text-secondary">{formatLongDay(now)}</p>
-        <p className="mt-4 text-[13px] text-primary">{attentionSentence(data.attentionCount)}</p>
+        <p className="mt-4 text-[13px] text-primary">{attentionSentence(data.attention.length)}</p>
       </header>
 
-      {attention.length > 0 ? (
-        <Section title="Needs attention">
-          <TaskList tasks={attention} />
-        </Section>
+      <UpNextCard upNext={data.upNext} />
+
+      <AttentionList items={data.attention} />
+
+      {proposed ? (
+        <div className="mb-10">
+          <PlanPreview
+            plan={proposed}
+            onApplied={() => {
+              setProposed(null);
+            }}
+            onCancel={() => {
+              setProposed(null);
+            }}
+          />
+        </div>
       ) : null}
 
-      <Section title="Upcoming">
-        {data.upcoming.length === 0 ? (
-          <p className="py-3 text-[13px] text-muted">
-            No events today.{' '}
-            <Link
-              href="/settings/integrations"
-              className="text-secondary underline-offset-2 hover:text-primary"
-            >
-              Connect a calendar
-            </Link>{' '}
-            to see them here.
-          </p>
+      <Section title="Today">
+        {timeline.isPending ? (
+          <div className="py-6 text-center" aria-busy="true">
+            <Spinner size={14} />
+          </div>
+        ) : timeline.isError ? (
+          <ErrorNotice
+            title="Your day could not be loaded."
+            onRetry={() => void timeline.refetch()}
+          />
         ) : (
-          <ul className="flex flex-col">
-            {data.upcoming.map((event) => (
-              <EventRow key={event.id} event={event} />
-            ))}
-          </ul>
+          <Timeline data={timeline.data} now={now} />
         )}
       </Section>
 
-      {attention.length === 0 && data.upcoming.length === 0 ? (
-        <EmptyState
-          title="A clear day."
-          description="Scalar will surface deadlines, events and updates that need you as they arrive."
-        />
+      {!proposed ? (
+        <div className="mb-10 flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            loading={previewPlan.isPending}
+            onClick={() => void planMyDay()}
+          >
+            Plan my day
+          </Button>
+          {previewPlan.isError ? (
+            <span className="text-[12px] text-muted" role="alert">
+              A plan could not be worked out right now.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {data.attention.length === 0 && emptyTimeline ? (
+        <p className="text-[13px] text-muted">
+          <Link
+            href="/settings/integrations"
+            className="text-secondary underline-offset-2 hover:text-primary"
+          >
+            Connect a calendar
+          </Link>{' '}
+          to see your events here too.
+        </p>
       ) : null}
     </>
   );

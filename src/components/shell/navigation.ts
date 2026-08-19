@@ -7,6 +7,7 @@ import {
   Sparkles,
   SquareCheck,
   Sun,
+  Timer,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 
@@ -21,6 +22,7 @@ export interface NavItem {
 export const primaryNav: readonly NavItem[] = [
   { href: '/today', label: 'Today', icon: Sun, key: 't' },
   { href: '/ask', label: 'Ask', icon: Sparkles, key: 'a' },
+  { href: '/focus', label: 'Focus', icon: Timer, key: 'f' },
   { href: '/inbox', label: 'Inbox', icon: Inbox, key: 'i' },
   { href: '/tasks', label: 'Tasks', icon: SquareCheck, key: 'k' },
   { href: '/calendar', label: 'Calendar', icon: Calendar, key: 'c' },

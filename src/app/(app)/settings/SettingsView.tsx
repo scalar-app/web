@@ -4,6 +4,9 @@ import { Button, Panel } from '@scalar/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
+import { AiStatus } from '@/components/settings/AiStatus';
+import { Diagnostics } from '@/components/settings/Diagnostics';
+import { PlanningSettings } from '@/components/settings/PlanningSettings';
 import { apiUrl } from '@/lib/api';
 import { useLogout, useSession } from '@/lib/queries/auth';
 
@@ -36,6 +39,12 @@ export function SettingsView() {
         </div>
       </Panel>
       <div className="mt-6">
+        <PlanningSettings />
+      </div>
+      <div className="mt-6">
+        <AiStatus />
+      </div>
+      <div className="mt-6">
         <Panel title="Integrations">
           <p className="text-[13px] text-secondary">
             Connect Google Calendar so your events appear in Today and Calendar.
@@ -49,6 +58,9 @@ export function SettingsView() {
             </Link>
           </div>
         </Panel>
+      </div>
+      <div className="mt-6">
+        <Diagnostics />
       </div>
       <div className="mt-6">
         <Panel title="About">
@@ -86,7 +98,7 @@ export function SettingsView() {
       </div>
 
       <p className="mt-6 text-[12px] text-muted">
-        Notifications, usage modes and data export will appear here as they are built.
+        Notifications and data export will appear here as they are built.
       </p>
     </>
   );

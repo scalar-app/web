@@ -1,9 +1,18 @@
 export const queryKeys = {
   me: ['me'] as const,
+  home: (tz: string, date?: string) => ['home', tz, date ?? 'now'] as const,
   today: (tz: string, date?: string) => ['today', tz, date ?? 'now'] as const,
+  timeline: (tz: string, date?: string) => ['timeline', tz, date ?? 'now'] as const,
+  timelineRange: (tz: string, from: string, to: string) =>
+    ['timeline', 'range', tz, from, to] as const,
   tasks: (filters: Record<string, unknown> = {}) => ['tasks', filters] as const,
   task: (id: string) => ['tasks', 'detail', id] as const,
+  inbox: ['inbox'] as const,
   spaces: ['spaces'] as const,
+  projects: ['projects'] as const,
+  preferences: ['preferences'] as const,
+  focusCurrent: ['focus', 'current'] as const,
+  focusSessions: (taskId?: string) => ['focus', 'sessions', taskId ?? 'all'] as const,
   events: (from: string, to: string) => ['events', from, to] as const,
   integrations: ['integrations'] as const,
   search: (term: string) => ['search', term] as const,

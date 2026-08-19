@@ -14,6 +14,7 @@ import {
 } from '@scalar/ui';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { ConnectCanvas } from '@/components/integrations/ConnectCanvas';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
 import {
@@ -25,6 +26,7 @@ import {
 
 const providerLabel: Record<IntegrationAccount['provider'], string> = {
   google_calendar: 'Google Calendar',
+  canvas: 'Canvas',
 };
 
 const statusTone: Record<SyncResource['syncStatus'], 'neutral' | 'yellow' | 'success' | 'danger'> =
@@ -221,6 +223,15 @@ export function IntegrationsView() {
         </Stack>
       )}
 
+      {/* Canvas connects with a token rather than a redirect, so it needs a form rather than a
+          button, and it belongs on the page whether or not anything is connected yet. */}
+      {integrations.isSuccess &&
+      !integrations.data.some((account) => account.provider === 'canvas') ? (
+        <div className="mt-6">
+          <ConnectCanvas />
+        </div>
+      ) : null}
+
       {connect.isError ? (
         <p role="alert" className="mt-4 text-[13px] text-danger">
           Google is not configured on this server, or the request failed. Check the API logs.
@@ -228,8 +239,8 @@ export function IntegrationsView() {
       ) : null}
 
       <p className="mt-8 text-[12px] text-muted">
-        Gmail and Canvas are next. Scalar requests the smallest scope a feature needs and you can
-        disconnect at any time.
+        Gmail is next. Scalar requests the smallest scope a feature needs and you can disconnect at
+        any time.
       </p>
     </>
   );
