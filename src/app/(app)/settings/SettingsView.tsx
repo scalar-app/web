@@ -4,6 +4,7 @@ import { Button, Panel } from '@scalar/ui';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
+import { apiUrl } from '@/lib/api';
 import { useLogout, useSession } from '@/lib/queries/auth';
 
 export function SettingsView() {
@@ -49,6 +50,41 @@ export function SettingsView() {
           </div>
         </Panel>
       </div>
+      <div className="mt-6">
+        <Panel title="About">
+          <dl className="grid grid-cols-[8rem_1fr] gap-y-2 text-[13px]">
+            <dt className="text-secondary">Licence</dt>
+            <dd className="text-primary">AGPL-3.0</dd>
+            <dt className="text-secondary">Server</dt>
+            <dd className="truncate text-primary" title={apiUrl()}>
+              {apiUrl()}
+            </dd>
+          </dl>
+          <p className="mt-4 text-[13px] text-secondary">
+            Scalar is self-hosted and open source. This is the server this install talks to, and the
+            source for every part of it is public.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {/* In the desktop app these open in the system browser rather than replacing the
+                window, which is what the shell's navigation handling is for. */}
+            <a
+              href="https://github.com/scalar-app"
+              rel="noreferrer"
+              className="sc-button sc-button--secondary sc-button--sm"
+            >
+              Source on GitHub
+            </a>
+            <a
+              href="https://github.com/scalar-app/docs"
+              rel="noreferrer"
+              className="sc-button sc-button--secondary sc-button--sm"
+            >
+              Documentation
+            </a>
+          </div>
+        </Panel>
+      </div>
+
       <p className="mt-6 text-[12px] text-muted">
         Notifications, usage modes and data export will appear here as they are built.
       </p>
