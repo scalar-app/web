@@ -21,6 +21,19 @@ export function useIntegrations() {
   });
 }
 
+export function useConnectCanvas() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { baseUrl: string; accessToken: string }) =>
+      scalar.integrations.connectCanvas(input),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.integrations });
+      // A first Canvas sync fills the inbox, so it should not look empty afterwards.
+      void client.invalidateQueries({ queryKey: ['inbox'] });
+    },
+  });
+}
+
 export function useConnectGoogle() {
   return useMutation({
     mutationFn: () => scalar.integrations.connectGoogle(),

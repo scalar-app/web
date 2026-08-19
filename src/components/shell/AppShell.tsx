@@ -6,6 +6,7 @@ import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react
 import { isApiConfigured } from '@/lib/api';
 import { useSession } from '@/lib/queries/auth';
 import { CommandPalette } from './CommandPalette';
+import { ImmersiveProvider, useImmersiveState } from './immersive';
 import { ServerSetup } from './ServerSetup';
 import { MobileTabBar, MobileTopBar } from './MobileNav';
 import { Sidebar } from './Sidebar';
@@ -17,6 +18,14 @@ const subscribeToNothing = () => () => undefined;
  * quiet loading state, and on 401 we send the user to sign in.
  */
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <ImmersiveProvider>
+      <Shell>{children}</Shell>
+    </ImmersiveProvider>
+  );
+}
+
+function Shell({ children }: { children: ReactNode }) {
   // The configured server lives outside React, in storage or in a value a native shell injected.
   // Reading it through useSyncExternalStore keeps the prerendered HTML and the browser agreeing:
   // the build assumes a server is configured, and the browser corrects that on hydration. It only
@@ -26,6 +35,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const session = useSession();
   const router = useRouter();
   const [commandOpen, setCommandOpen] = useState(false);
+  // Focus asks for this while a session runs. Everything else keeps the navigation.
+  const immersive = useImmersiveState();
 
   useHotkey('mod+k', () => setCommandOpen((v) => !v), { allowInInputs: true });
 
@@ -43,6 +54,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-live="polite"
       >
         <Spinner size={16} />
+      </div>
+    );
+  }
+
+  if (immersive) {
+    return (
+      // Nothing but the screen itself. The command palette stays mounted because it is a keyboard
+      // shortcut rather than furniture: invisible until asked for, and a way out if it is needed.
+      <div className="flex h-[100dvh] flex-col overflow-hidden">
+        <main id="main" className="min-h-0 flex-1 overflow-y-auto">
+          {children}
+        </main>
+        <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
       </div>
     );
   }

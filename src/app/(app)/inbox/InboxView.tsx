@@ -1,13 +1,15 @@
 'use client';
 
-import type { Space, Task } from '@scalar/sdk';
+import type { InboxItem, Space } from '@scalar/sdk';
 import { Badge, Button, EmptyState, Select, Spinner } from '@scalar/ui';
 import { Check, X } from 'lucide-react';
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
+import { SuggestionCard } from '@/components/inbox/SuggestionCard';
+import { useInbox } from '@/lib/queries/inbox';
 import { useSpaces } from '@/lib/queries/spaces';
-import { useTasks, useUpdateTask } from '@/lib/queries/tasks';
+import { useUpdateTask } from '@/lib/queries/tasks';
 import { describeDue } from '@/lib/time';
 
 /**
@@ -18,9 +20,11 @@ import { describeDue } from '@/lib/time';
  * empty, so each row offers the smallest set of decisions that clears it.
  *
  * There is no separate inbox table. An unfiled task is a task, and giving it one would mean two
- * places to look for the same thing.
+ * places to look for the same thing. What a row can carry is a suggestion about where the item
+ * belongs, which is advice until someone accepts it.
  */
-function InboxRow({ task, spaces }: { task: Task; spaces: Space[] }) {
+function InboxRow({ item, spaces }: { item: InboxItem; spaces: Space[] }) {
+  const task = item.task;
   const update = useUpdateTask();
   const due = describeDue(task.dueAt);
 
@@ -40,66 +44,69 @@ function InboxRow({ task, spaces }: { task: Task; spaces: Space[] }) {
   }
 
   return (
-    <li className="flex flex-col gap-3 border-b border-border py-4 last:border-b-0 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
-        <p className="text-[13px] text-primary">{task.title}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-          {due ? <Badge tone={due.tone}>{due.label}</Badge> : null}
-          {task.description ? (
-            <span className="line-clamp-1 text-xs text-muted">{task.description}</span>
+    <li className="border-b border-border py-4 last:border-b-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-[13px] text-primary">{task.title}</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {due ? <Badge tone={due.tone}>{due.label}</Badge> : null}
+            {task.description ? (
+              <span className="line-clamp-1 text-xs text-muted">{task.description}</span>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          {spaces.length > 0 ? (
+            <Select
+              aria-label={`Move "${task.title}" into a space`}
+              defaultValue=""
+              disabled={update.isPending}
+              onChange={(event) => fileInto(event.target.value)}
+              className="min-h-11 w-36 md:min-h-0"
+            >
+              <option value="" disabled>
+                Move to space
+              </option>
+              {spaces.map((space) => (
+                <option key={space.id} value={space.id}>
+                  {space.name}
+                </option>
+              ))}
+            </Select>
           ) : null}
+
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={keep}
+            loading={update.isPending}
+            iconStart={<Check size={14} aria-hidden />}
+            aria-label={`Keep "${task.title}" and move it to your tasks`}
+            className="min-h-11 md:min-h-0"
+          >
+            Keep
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={dismiss}
+            disabled={update.isPending}
+            iconStart={<X size={14} aria-hidden />}
+            aria-label={`Dismiss "${task.title}"`}
+            className="min-h-11 md:min-h-0"
+          >
+            Dismiss
+          </Button>
         </div>
       </div>
-
-      <div className="flex shrink-0 items-center gap-2">
-        {spaces.length > 0 ? (
-          <Select
-            aria-label={`Move "${task.title}" into a space`}
-            defaultValue=""
-            disabled={update.isPending}
-            onChange={(event) => fileInto(event.target.value)}
-            className="min-h-11 w-36 md:min-h-0"
-          >
-            <option value="" disabled>
-              Move to space
-            </option>
-            {spaces.map((space) => (
-              <option key={space.id} value={space.id}>
-                {space.name}
-              </option>
-            ))}
-          </Select>
-        ) : null}
-
-        <Button
-          size="sm"
-          variant="primary"
-          onClick={keep}
-          loading={update.isPending}
-          iconStart={<Check size={14} aria-hidden />}
-          aria-label={`Keep "${task.title}" and move it to your tasks`}
-          className="min-h-11 md:min-h-0"
-        >
-          Keep
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={dismiss}
-          disabled={update.isPending}
-          iconStart={<X size={14} aria-hidden />}
-          aria-label={`Dismiss "${task.title}"`}
-          className="min-h-11 md:min-h-0"
-        >
-          Dismiss
-        </Button>
-      </div>
+      {item.suggestion ? <SuggestionCard item={item} spaces={spaces} /> : null}
     </li>
   );
 }
 
 export function InboxView() {
-  const inbox = useTasks({ status: ['inbox'], limit: 100 });
+  const inbox = useInbox();
   const spacesQuery = useSpaces();
   const [showDone, setShowDone] = useState(false);
 
@@ -137,8 +144,8 @@ export function InboxView() {
 
       {items.length > 0 ? (
         <ul className="border-t border-border">
-          {items.map((task) => (
-            <InboxRow key={task.id} task={task} spaces={spaces} />
+          {items.map((item) => (
+            <InboxRow key={item.task.id} item={item} spaces={spaces} />
           ))}
         </ul>
       ) : null}
@@ -160,7 +167,8 @@ export function InboxView() {
           Anything created without a space or a status starts here: quick capture from Command, and,
           once the Gmail and Canvas integrations land, messages and assignments that need a
           decision. Keeping an item moves it to your tasks; dismissing it marks it cancelled rather
-          than deleting it, so nothing is lost.
+          than deleting it, so nothing is lost. Where Scalar has something to suggest about an item,
+          it appears under the row as a proposal, and nothing is applied until you accept it.
         </p>
       ) : null}
     </>
