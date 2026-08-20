@@ -14,7 +14,11 @@ export default defineConfig({
   testDir: './test/visual',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  reporter: process.env.CI ? 'github' : 'list',
+  // The html reporter is what writes attachments to disk. Without it the rail PNGs each run
+  // produces exist only in memory, and the artifact upload has nothing to collect.
+  reporter: process.env.CI
+    ? [['github'], ['html', { open: 'never', outputFolder: 'playwright-report' }]]
+    : [['list']],
   use: {
     baseURL: 'http://localhost:3000',
     screenshot: 'only-on-failure',
