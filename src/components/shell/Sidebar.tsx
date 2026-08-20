@@ -1,7 +1,7 @@
 'use client';
 
 import { cx, Kbd, useHotkey } from '@scalar/ui';
-import { LogOut, PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react';
+import { Command, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '../Logo';
@@ -127,7 +127,9 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
         )}
       >
         {collapsed ? (
-          <Search size={16} strokeWidth={1.75} aria-hidden />
+          // The command mark, not a magnifier: Search is a destination further down the same rail,
+          // and two identical icons a few rows apart is a coin flip rather than a choice.
+          <Command size={16} strokeWidth={1.75} aria-hidden />
         ) : (
           <>
             <span>Command</span>
@@ -202,8 +204,11 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
           aria-controls="sidebar"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          // `w-full` because a button shrink wraps even as a flex container, and this one is not
+          // in a flex parent the way the rest of the rail is. Without it `justify-center` centers
+          // the icon inside a box only as wide as the icon, which parks it against the left edge.
           className={cx(
-            'mt-2 flex items-center rounded-md py-2 text-[13px] text-secondary transition-colors hover:bg-surface hover:text-primary',
+            'mt-2 flex w-full items-center rounded-md py-2 text-[13px] text-secondary transition-colors hover:bg-surface hover:text-primary',
             collapsed ? 'justify-center px-0' : 'gap-3 pr-2 pl-3',
           )}
         >
