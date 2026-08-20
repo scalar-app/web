@@ -10,7 +10,8 @@
     "lint": "eslint . && prettier --check .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:visual": "playwright test"
   },
   "dependencies": {
     "@scalar/sdk": "link:../sdk",
@@ -23,6 +24,7 @@
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.4",
