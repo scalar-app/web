@@ -50,3 +50,20 @@ jobs:
         working-directory: web
       - run: pnpm build
         working-directory: web
+      # After the build, because these run against `next start` rather than the dev server: what
+      # is checked is what somebody would load.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+        working-directory: web
+      - run: pnpm test:visual
+        working-directory: web
+      # Carries the rail as a PNG on every run, and the failure screenshots when there are any.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sidebar
+          path: |
+            web/test-results/
+            web/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
