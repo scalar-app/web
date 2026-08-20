@@ -25,6 +25,7 @@ import {
 
 const providerLabel: Record<IntegrationAccount['provider'], string> = {
   google_calendar: 'Google Calendar',
+  canvas: 'Canvas',
 };
 
 const statusTone: Record<SyncResource['syncStatus'], 'neutral' | 'yellow' | 'success' | 'danger'> =
