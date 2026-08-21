@@ -6,20 +6,45 @@ import { scalar } from '../api';
 import { queryKeys } from '../query-keys';
 
 export type SessionState =
-  { status: 'loading' } | { status: 'signed-out' } | { status: 'signed-in'; user: User };
+  | { status: 'loading' }
+  | { status: 'signed-out' }
+  /**
+   * The server did not answer, or answered with a fault. Not the same as being signed out.
+   * `offline` means the browser never sent the request, so the server may be perfectly fine.
+   */
+  | { status: 'unreachable'; reason: 'offline' | 'error'; retry: () => void }
+  | { status: 'signed-in'; user: User };
 
 /** Source of truth for "am I signed in": the API answers, the UI never guesses from cookies. */
 export function useSession(): SessionState {
   const query = useQuery({
     queryKey: queryKeys.me,
     queryFn: () => scalar.me.get(),
-    retry: false,
+    // A 401 is a real answer and retrying it only delays the sign in screen. A dropped connection
+    // or a 500 is not an answer, so those get a couple of goes before we tell anyone about it.
+    retry: (count, error) => {
+      if (isScalarApiError(error) && error.status < 500) return false;
+      return count < 2;
+    },
     staleTime: 60_000,
   });
-  if (query.isPending) return { status: 'loading' };
+  const retry = () => void query.refetch();
+  if (query.isPending) {
+    // A paused fetch is React Query holding the request back because it believes there is no
+    // network. It keeps the query in `pending` while it waits, with nothing running and nothing
+    // due to happen, so treating that as "loading" is a spinner that spins until the connection
+    // comes back. Say so instead.
+    if (query.fetchStatus === 'paused') {
+      return { status: 'unreachable', reason: 'offline', retry };
+    }
+    return { status: 'loading' };
+  }
   if (query.data) return { status: 'signed-in', user: query.data };
   if (isScalarApiError(query.error) && query.error.status === 401) return { status: 'signed-out' };
-  return { status: 'signed-out' };
+  // Anything else means we do not know. Reporting it as signed out would throw the person back to
+  // the sign in screen because their server had a bad minute, and signing in again would not work
+  // either, so the screen would be a lie as well as a nuisance.
+  return { status: 'unreachable', reason: 'error', retry };
 }
 
 export function useRequestMagicLink() {

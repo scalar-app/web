@@ -31,10 +31,16 @@ export function SpacesView() {
           placeholder="New space"
           aria-label="New space name"
           className="flex-1"
+          invalid={create.isError}
         />
         <Button type="submit" variant="primary" loading={create.isPending} disabled={!name.trim()}>
           Create
         </Button>
+        {create.isError ? (
+          <span role="alert" className="text-[13px] text-danger">
+            Could not create. Try again.
+          </span>
+        ) : null}
       </form>
       {spaces.isPending ? (
         <div className="py-10 text-center" aria-busy="true">

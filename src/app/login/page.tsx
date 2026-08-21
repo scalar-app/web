@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Sign in' };
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="min-h-app flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
         <div className="mb-8">
           <Logo size={20} />

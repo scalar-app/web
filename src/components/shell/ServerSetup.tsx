@@ -39,7 +39,7 @@ export function ServerSetup() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center px-4 py-10">
+    <div className="min-h-app flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <Logo />
         <h1 className="mt-6 text-xl font-semibold tracking-tight">Connect to your Scalar</h1>

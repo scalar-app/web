@@ -100,6 +100,13 @@ function InboxRow({ item, spaces }: { item: InboxItem; spaces: Space[] }) {
           </Button>
         </div>
       </div>
+      {/* Keeping, filing and dismissing are all optimistic, so a failure looks like the row
+          clearing and then coming back. Say why rather than letting it read as a glitch. */}
+      {update.isError ? (
+        <p role="alert" className="mt-2 text-[13px] text-danger">
+          Could not file that. Try again.
+        </p>
+      ) : null}
       {item.suggestion ? <SuggestionCard item={item} spaces={spaces} /> : null}
     </li>
   );

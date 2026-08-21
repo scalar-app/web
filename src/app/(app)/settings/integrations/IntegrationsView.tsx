@@ -123,6 +123,11 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
             <ResourceRow key={resource.resourceId} resource={resource} />
           ))}
         </ul>
+        {sync.isError ? (
+          <p role="alert" className="text-[13px] text-danger">
+            Could not start a sync. Try again.
+          </p>
+        ) : null}
       </Stack>
 
       <Dialog
@@ -165,6 +170,13 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
           Keeping them leaves the events in your calendar view without a link to Google. Deleting
           removes every event that came from this account.
         </p>
+        {/* Without this the dialog just sits there with the spinner stopped, which reads as though
+            the disconnect worked. Revoking access failing silently is the wrong way round. */}
+        {disconnect.isError ? (
+          <p role="alert" className="mt-3 text-[13px] text-danger">
+            Could not disconnect. Nothing was changed. Try again.
+          </p>
+        ) : null}
       </Dialog>
     </Panel>
   );
