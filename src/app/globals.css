@@ -32,3 +32,24 @@ body {
   background: var(--sc-color-background);
   color: var(--sc-color-text-primary);
 }
+
+/*
+ * How much of the window the app draws its own title bar into. Zero in a browser, where the
+ * window belongs to the browser; the native shell sets it before the first paint, so nothing
+ * here has to wait for React to find out which it is running in.
+ */
+:root {
+  --sc-titlebar: 0px;
+}
+
+/*
+ * "The window, less its title bar." Every screen that wants the full height uses these rather
+ * than 100dvh, so the title bar takes its space out of the app instead of off the bottom.
+ */
+.h-app {
+  height: calc(100dvh - var(--sc-titlebar));
+}
+
+.min-h-app {
+  min-height: calc(100dvh - var(--sc-titlebar));
+}

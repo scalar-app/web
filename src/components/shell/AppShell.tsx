@@ -3,6 +3,7 @@
 import { Spinner, useHotkey } from '@scalar/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { ErrorNotice } from '@/components/ErrorNotice';
 import { isApiConfigured } from '@/lib/api';
 import { useSession } from '@/lib/queries/auth';
 import { CommandPalette } from './CommandPalette';
@@ -46,10 +47,33 @@ function Shell({ children }: { children: ReactNode }) {
 
   if (!configured) return <ServerSetup />;
 
+  // Not signed out, so not the sign in screen. Say what actually happened and offer another go.
+  if (session.status === 'unreachable') {
+    return (
+      <div className="min-h-app flex items-center justify-center px-6">
+        <div className="w-full max-w-sm">
+          <ErrorNotice
+            title={
+              session.reason === 'offline'
+                ? 'No network connection.'
+                : 'Cannot reach your Scalar server.'
+            }
+            description={
+              session.reason === 'offline'
+                ? 'You are still signed in. Scalar will pick up where it left off once you are back online.'
+                : 'You are still signed in. Check the server is running, then try again.'
+            }
+            onRetry={session.retry}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (session.status !== 'signed-in') {
     return (
       <div
-        className="flex min-h-screen items-center justify-center"
+        className="min-h-app flex items-center justify-center"
         aria-busy="true"
         aria-live="polite"
       >
@@ -62,7 +86,7 @@ function Shell({ children }: { children: ReactNode }) {
     return (
       // Nothing but the screen itself. The command palette stays mounted because it is a keyboard
       // shortcut rather than furniture: invisible until asked for, and a way out if it is needed.
-      <div className="flex h-[100dvh] flex-col overflow-hidden">
+      <div className="h-app flex flex-col overflow-hidden">
         <main id="main" className="min-h-0 flex-1 overflow-y-auto">
           {children}
         </main>
@@ -74,7 +98,7 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     // A row on desktop with the sidebar beside the content, a column on phones with the bars
     // stacked above and below it. Only the middle scrolls, so the tab bar never drifts away.
-    <div className="flex h-[100dvh] flex-col overflow-hidden md:flex-row">
+    <div className="h-app flex flex-col overflow-hidden md:flex-row">
       <MobileTopBar onOpenCommand={() => setCommandOpen(true)} />
       <Sidebar onOpenCommand={() => setCommandOpen(true)} />
       <main id="main" className="min-h-0 flex-1 overflow-y-auto">

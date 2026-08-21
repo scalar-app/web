@@ -74,7 +74,14 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   async function runCommand(command: Command | undefined) {
     if (!command) return;
-    await command.run();
+    try {
+      await command.run();
+    } catch {
+      // The mutation holds its own failure and the palette renders it below, so there is nothing
+      // to do with the error here beyond not letting it escape as an unhandled rejection. The
+      // palette stays open on purpose: closing it would throw away what was typed.
+      return;
+    }
     close();
   }
 

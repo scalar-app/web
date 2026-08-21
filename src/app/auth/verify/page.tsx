@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Signing in' };
 
 export default function VerifyPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center px-6">
+    <main className="min-h-app flex items-center justify-center px-6">
       <Suspense fallback={null}>
         <VerifyClient />
       </Suspense>
