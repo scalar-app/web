@@ -78,7 +78,7 @@ Implemented: magic link sign in and sign out, session guard, Today (greeting, at
 
 Inbox (triage of anything captured but not filed: keep, file into a space, or dismiss) and Search (across tasks, events and spaces, with the term in the URL so a search can be linked to).
 
-Not implemented yet: task detail editing, space detail pages, Gmail and Canvas integrations, notifications, onboarding and usage modes.
+Not implemented yet: task detail editing, space detail pages, notifications, onboarding and usage modes.
 
 ## Contributing
 

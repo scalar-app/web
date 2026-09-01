@@ -1,6 +1,6 @@
 'use client';
 
-import type { DisconnectData } from '@scalar/sdk';
+import type { DisconnectData, GoogleProvider } from '@scalar/sdk';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { scalar } from '../api';
 import { queryKeys } from '../query-keys';
@@ -36,7 +36,8 @@ export function useConnectCanvas() {
 
 export function useConnectGoogle() {
   return useMutation({
-    mutationFn: () => scalar.integrations.connectGoogle(),
+    mutationFn: (provider: GoogleProvider = 'google_calendar') =>
+      scalar.integrations.connectGoogle(provider),
     onSuccess: ({ url }) => {
       // Full navigation, not a router push: the consent screen is on Google's origin.
       window.location.assign(url);
