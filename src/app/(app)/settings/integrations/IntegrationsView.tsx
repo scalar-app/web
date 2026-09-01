@@ -1,6 +1,6 @@
 'use client';
 
-import type { IntegrationAccount, SyncResource } from '@scalar/sdk';
+import type { GoogleProvider, IntegrationAccount, SyncResource } from '@scalar/sdk';
 import {
   Badge,
   Button,
@@ -27,6 +27,18 @@ import {
 const providerLabel: Record<IntegrationAccount['provider'], string> = {
   google_calendar: 'Google Calendar',
   canvas: 'Canvas',
+  gmail: 'Gmail',
+};
+
+/**
+ * What a provider actually imported, for the sentence a person reads before deciding whether to
+ * keep it. Calling a starred email an "event" in the disconnect dialog would be describing rows
+ * that do not exist.
+ */
+const providerNoun: Record<IntegrationAccount['provider'], string> = {
+  google_calendar: 'events',
+  canvas: 'assignments',
+  gmail: 'messages',
 };
 
 const statusTone: Record<SyncResource['syncStatus'], 'neutral' | 'yellow' | 'success' | 'danger'> =
@@ -75,6 +87,11 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
   const [confirming, setConfirming] = useState(false);
   const needsReauth = account.status === 'reauthorization_required';
   const connect = useConnectGoogle();
+  const noun = providerNoun[account.provider];
+  const googleProvider: GoogleProvider | null =
+    account.provider === 'google_calendar' || account.provider === 'gmail'
+      ? account.provider
+      : null;
 
   return (
     <Panel
@@ -86,7 +103,11 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
               size="sm"
               variant="primary"
               loading={connect.isPending}
-              onClick={() => connect.mutate()}
+              onClick={() => {
+                // Canvas reconnects by pasting a new token, not by a redirect, so there is nothing
+                // for this button to start.
+                if (googleProvider) connect.mutate(googleProvider);
+              }}
             >
               Reconnect
             </Button>
@@ -114,8 +135,7 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
         </Inline>
         {needsReauth ? (
           <p className="text-[13px] text-secondary">
-            Google revoked access, so syncing has stopped. Reconnect to resume. Imported events stay
-            where they are.
+            {`Access was revoked, so syncing has stopped. Reconnect to resume. Imported ${noun} stay where they are.`}
           </p>
         ) : null}
         <ul className="flex flex-col">
@@ -133,8 +153,8 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
       <Dialog
         open={confirming}
         onClose={() => setConfirming(false)}
-        title="Disconnect Google Calendar?"
-        description="Scalar will revoke its access at Google and stop syncing. Choose what happens to events already imported."
+        title={`Disconnect ${providerLabel[account.provider]}?`}
+        description={`Scalar will stop syncing this account. Choose what happens to the ${noun} it already imported.`}
         footer={
           <Inline gap={2} justify="end">
             <Button variant="ghost" onClick={() => setConfirming(false)}>
@@ -149,7 +169,7 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
                 )
               }
             >
-              Keep events
+              {`Keep ${noun}`}
             </Button>
             <Button
               variant="danger"
@@ -161,14 +181,13 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
                 )
               }
             >
-              Delete events
+              {`Delete ${noun}`}
             </Button>
           </Inline>
         }
       >
         <p className="m-0 text-[13px] text-secondary">
-          Keeping them leaves the events in your calendar view without a link to Google. Deleting
-          removes every event that came from this account.
+          {`Keeping them leaves the ${noun} in Scalar without a link to the account they came from. Deleting removes every one that came from it.`}
         </p>
         {/* Without this the dialog just sits there with the spinner stopped, which reads as though
             the disconnect worked. Revoking access failing silently is the wrong way round. */}
@@ -183,8 +202,8 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
 }
 
 const callbackMessage: Record<string, string> = {
-  denied: 'Google access was not granted, so nothing was connected.',
-  error: 'Google could not be connected. Try again.',
+  denied: 'Access was not granted, so nothing was connected.',
+  error: 'The account could not be connected. Try again.',
 };
 
 export function IntegrationsView() {
@@ -222,7 +241,11 @@ export function IntegrationsView() {
           title="Nothing connected yet."
           description="Connect Google Calendar to see your events in Today and Calendar. Scalar asks for read only access."
           action={
-            <Button variant="primary" loading={connect.isPending} onClick={() => connect.mutate()}>
+            <Button
+              variant="primary"
+              loading={connect.isPending}
+              onClick={() => connect.mutate('google_calendar')}
+            >
               Connect Google Calendar
             </Button>
           }
@@ -234,6 +257,31 @@ export function IntegrationsView() {
           ))}
         </Stack>
       )}
+
+      {/* Gmail is its own consent, so it is its own button: connecting a calendar must never ask
+          anyone for their mail. Only offered while there is no Gmail account, the same rule the
+          Canvas form follows. */}
+      {integrations.isSuccess && !integrations.data.some((a) => a.provider === 'gmail') ? (
+        <div className="mt-6">
+          <Panel title="Gmail">
+            <Stack gap={3}>
+              <p className="m-0 text-[13px] text-secondary">
+                Starred messages arrive in your Inbox as work to decide on. Scalar reads message
+                headers and Gmail&rsquo;s own preview line, never the body, and never sends mail.
+              </p>
+              <Inline gap={2}>
+                <Button
+                  variant="primary"
+                  loading={connect.isPending}
+                  onClick={() => connect.mutate('gmail')}
+                >
+                  Connect Gmail
+                </Button>
+              </Inline>
+            </Stack>
+          </Panel>
+        </div>
+      ) : null}
 
       {/* Canvas connects with a token rather than a redirect, so it needs a form rather than a
           button, and it belongs on the page whether or not anything is connected yet. */}
@@ -251,7 +299,7 @@ export function IntegrationsView() {
       ) : null}
 
       <p className="mt-8 text-[12px] text-muted">
-        Gmail is next. Scalar requests the smallest scope a feature needs and you can disconnect at
+        Scalar requests the smallest scope a feature needs, reads only, and you can disconnect at
         any time.
       </p>
     </>
