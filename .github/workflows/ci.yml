@@ -15,14 +15,45 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: web
+      # Which branch of each sibling to read.
+      #
+      # This job used to read the sibling's default branch whatever branch it was
+      # running for, so a change spanning two repositories was tested against half
+      # of itself: the Gmail work failed `pnpm lint` here with "unsafe assignment of
+      # an error typed value", which was `@scalar/integrations` on main not yet
+      # exporting what this branch imports. That reads as a type error in code that
+      # is fine.
+      #
+      # Each sibling is resolved on its own -- the branch of the same name where it
+      # exists, the default branch where it does not -- so a feature that touches
+      # one sibling is not held to having a branch in all of them, and an ordinary
+      # single-repository change is unaffected.
+      - id: sibling
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          sibling_ref() {
+            if git ls-remote --exit-code --heads \
+                 "https://github.com/scalar-app/$1" "$BRANCH" >/dev/null 2>&1; then
+              echo "$BRANCH"
+            else
+              echo ""
+            fi
+          }
+          echo "ui=$(sibling_ref ui)" >> "$GITHUB_OUTPUT"
+          echo "sdk=$(sibling_ref sdk)" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
         with:
           repository: scalar-app/ui
           path: ui
+          ref: ${{ steps.sibling.outputs.ui }}
       - uses: actions/checkout@v4
         with:
           repository: scalar-app/sdk
           path: sdk
+          ref: ${{ steps.sibling.outputs.sdk }}
       - uses: pnpm/action-setup@v4
         with:
           version: 11.17.0
