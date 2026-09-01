@@ -21,20 +21,46 @@ const USER = {
   updatedAt: '2026-08-20T10:00:00.000Z',
 };
 
+const WORKSPACE = {
+  id: '22222222-2222-4222-8222-222222222222',
+  name: 'Ada',
+  ownerId: USER.id,
+  kind: 'personal',
+  role: 'owner',
+  createdAt: '2026-08-20T10:00:00.000Z',
+  updatedAt: '2026-08-20T10:00:00.000Z',
+};
+
 /**
  * There is no API in CI, and the shell only renders for somebody signed in. Answering `/me` is
  * enough: a list that fails leaves an empty badge, and the sidebar is the subject either way.
+ *
+ * `/me` answers with a workspace as well as a user, and it has to: `MeResponseSchema` in
+ * `@scalar/sdk` requires both, and a response that does not parse reaches the shell as a fault
+ * rather than as a bad shape — "Cannot reach your Scalar server", which is what a stub answering
+ * `{ user }` alone produced here for eleven days.
  */
 async function openSidebar(page: Page, state: 'collapsed' | 'expanded') {
   await page.route('**/api/v1/**', async (route) => {
     const { pathname } = new URL(route.request().url());
-    const body = pathname.endsWith('/me') ? { user: USER } : { data: [], nextCursor: null };
+    const body = pathname.endsWith('/me')
+      ? { user: USER, workspace: WORKSPACE }
+      : { data: [], nextCursor: null };
     await route.fulfill({ json: body });
   });
 
   // Set before any script runs, so the first paint is already the state under test.
+  //
+  // The API address is here for a different reason than the collapse state. The app asks for one
+  // before it renders anything else — `isApiConfigured` in `src/lib/api.ts`, the "Connect to your
+  // Scalar" screen — and there is no build time default in CI, so without this the page under
+  // test is the setup form and `#sidebar` does not exist. That is what these six have been
+  // failing on since the setup screen shipped: not a sidebar defect, an app that never got as far
+  // as drawing one. The route handler above still answers everything; this only decides where it
+  // is answering for.
   await page.addInitScript(
     (value) => {
+      window.localStorage.setItem('scalar.apiUrl', 'http://localhost:4000');
       window.localStorage.setItem('scalar.sidebarCollapsed', value);
     },
     state === 'collapsed' ? '1' : '0',
