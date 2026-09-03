@@ -1,5 +1,6 @@
 export const queryKeys = {
   me: ['me'] as const,
+  meContext: ['me', 'context'] as const,
   home: (tz: string, date?: string) => ['home', tz, date ?? 'now'] as const,
   today: (tz: string, date?: string) => ['today', tz, date ?? 'now'] as const,
   timeline: (tz: string, date?: string) => ['timeline', tz, date ?? 'now'] as const,
@@ -9,6 +10,10 @@ export const queryKeys = {
   task: (id: string) => ['tasks', 'detail', id] as const,
   inbox: ['inbox'] as const,
   notifications: ['notifications'] as const,
+  workspaces: ['workspaces'] as const,
+  workspaceMembers: (id: string) => ['workspaces', id, 'members'] as const,
+  workspaceInvitations: (id: string) => ['workspaces', id, 'invitations'] as const,
+  invitation: (token: string) => ['invitations', token] as const,
   spaces: ['spaces'] as const,
   projects: ['projects'] as const,
   preferences: ['preferences'] as const,

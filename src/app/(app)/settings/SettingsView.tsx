@@ -46,6 +46,21 @@ export function SettingsView() {
         <AiStatus />
       </div>
       <div className="mt-6">
+        <Panel title="Workspace">
+          <p className="text-[13px] text-secondary">
+            Who is in this workspace, and who may invite or remove people.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/settings/workspace"
+              className="sc-button sc-button--secondary sc-button--sm"
+            >
+              Manage workspace
+            </Link>
+          </div>
+        </Panel>
+      </div>
+      <div className="mt-6">
         <Panel title="Integrations">
           <p className="text-[13px] text-secondary">
             Connect Google Calendar so your events appear in Today and Calendar.
