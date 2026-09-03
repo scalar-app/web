@@ -138,6 +138,46 @@ function AccountPanel({ account }: { account: IntegrationAccount }) {
             {`Access was revoked, so syncing has stopped. Reconnect to resume. Imported ${noun} stay where they are.`}
           </p>
         ) : null}
+
+        {/*
+          Writing is a second consent, asked for on its own.
+
+          Connecting a calendar in order to read it is not agreement to have it changed, so this is
+          a separate decision made here rather than a scope bundled into the first screen. Turning
+          it on sends somebody back to Google, because permission is Google's to give and not
+          Scalar's to assume.
+        */}
+        {account.provider === 'google_calendar' && !needsReauth ? (
+          <div className="rounded-md border border-border p-3">
+            <Inline gap={2}>
+              <span className="text-[13px] text-primary">Putting plans on this calendar</span>
+              {account.canWriteCalendar ? (
+                <Badge tone="success">Allowed</Badge>
+              ) : (
+                <Badge tone="neutral">Not allowed</Badge>
+              )}
+            </Inline>
+            <p className="mt-1 text-[12px] text-secondary">
+              {account.canWriteCalendar
+                ? 'When you apply a plan you can choose to add its blocks here, where other people can see them. Scalar only ever changes events it created.'
+                : 'Scalar can read this calendar. Allowing it to write lets an approved plan add blocks here, which other people can see. Nothing is ever written without you asking at the time.'}
+            </p>
+            {account.canWriteCalendar ? null : (
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  loading={connect.isPending}
+                  onClick={() => {
+                    connect.mutate({ provider: 'google_calendar', access: 'write' });
+                  }}
+                >
+                  Allow Scalar to add events
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : null}
         <ul className="flex flex-col">
           {account.resources.map((resource) => (
             <ResourceRow key={resource.resourceId} resource={resource} />

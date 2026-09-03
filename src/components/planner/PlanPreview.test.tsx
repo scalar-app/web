@@ -7,8 +7,13 @@ import { PlanPreview } from './PlanPreview';
 
 const applyPlan = vi.fn();
 
+const listIntegrations = vi.fn();
+
 vi.mock('@/lib/api', () => ({
-  scalar: { planner: { apply: (input: unknown) => applyPlan(input) as unknown } },
+  scalar: {
+    planner: { apply: (input: unknown) => applyPlan(input) as unknown },
+    integrations: { list: () => listIntegrations() as unknown },
+  },
 }));
 
 function plan(over: Partial<PlanPreviewData> = {}): PlanPreviewData {
@@ -50,6 +55,83 @@ describe('PlanPreview', () => {
   beforeEach(() => {
     applyPlan.mockReset();
     applyPlan.mockResolvedValue({ applied: 2, taskIds: ['a', 'b'] });
+    listIntegrations.mockReset();
+    listIntegrations.mockResolvedValue([]);
+  });
+
+  function account(canWriteCalendar: boolean) {
+    return [
+      {
+        id: 'acc_1',
+        provider: 'google_calendar',
+        displayName: 'ada@example.com',
+        status: 'active',
+        connectedAt: '2026-08-18T10:00:00.000Z',
+        resources: [],
+        canWriteCalendar,
+      },
+    ];
+  }
+
+  /**
+   * Publishing is the only thing on this panel that other people can see, so it is off every time
+   * the panel opens and is never remembered. A ticked box from three weeks ago is not consent.
+   */
+  it('does not offer the calendar when no calendar would take it', async () => {
+    listIntegrations.mockResolvedValue(account(false));
+    render(<PlanPreview plan={plan()} />, { wrapper });
+
+    expect(await screen.findByText('Proposed plan')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('checkbox', { name: /Also put these on my calendar/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('applies without publishing unless the box is ticked', async () => {
+    listIntegrations.mockResolvedValue(account(true));
+    render(<PlanPreview plan={plan()} />, { wrapper });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Apply plan' }));
+
+    await waitFor(() => {
+      expect(applyPlan).toHaveBeenCalled();
+    });
+    expect(applyPlan.mock.calls[0]?.[0]).not.toHaveProperty('publishToCalendar');
+  });
+
+  it('publishes when asked', async () => {
+    listIntegrations.mockResolvedValue(account(true));
+    render(<PlanPreview plan={plan()} />, { wrapper });
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: /Also put these on my calendar/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Apply plan' }));
+
+    await waitFor(() => {
+      expect(applyPlan.mock.calls[0]?.[0]).toMatchObject({ publishToCalendar: true });
+    });
+  });
+
+  /** The plan is saved either way, and saying otherwise would send somebody looking for it. */
+  it('says the plan was saved when the calendar refused it', async () => {
+    listIntegrations.mockResolvedValue(account(true));
+    applyPlan.mockResolvedValue({
+      applied: 2,
+      taskIds: ['a', 'b'],
+      published: [{ taskId: 'a', status: 'failed', reason: 'Google refused the write.' }],
+    });
+    render(<PlanPreview plan={plan()} />, { wrapper });
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: /Also put these on my calendar/ }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Apply plan' }));
+
+    expect(
+      await screen.findByText('Your plan was saved. Some blocks did not reach the calendar.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Google refused the write.')).toBeInTheDocument();
   });
 
   it('says nothing has changed yet, and explains each block', async () => {

@@ -36,8 +36,13 @@ export function useConnectCanvas() {
 
 export function useConnectGoogle() {
   return useMutation({
-    mutationFn: (provider: GoogleProvider = 'google_calendar') =>
-      scalar.integrations.connectGoogle(provider),
+    mutationFn: (
+      input:
+        GoogleProvider | { provider: GoogleProvider; access: 'read' | 'write' } = 'google_calendar',
+    ) =>
+      typeof input === 'string'
+        ? scalar.integrations.connectGoogle(input)
+        : scalar.integrations.connectGoogle(input.provider, { access: input.access }),
     onSuccess: ({ url }) => {
       // Full navigation, not a router push: the consent screen is on Google's origin.
       window.location.assign(url);

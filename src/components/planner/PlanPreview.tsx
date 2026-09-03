@@ -1,9 +1,10 @@
 'use client';
 
-import type { PlanPreview as PlanPreviewData, PlanReason } from '@scalar/sdk';
+import type { PlanPreview as PlanPreviewData, PlanReason, PublishOutcome } from '@scalar/sdk';
 import { Button, Checkbox, Panel } from '@scalar/ui';
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
+import { useIntegrations } from '@/lib/queries/integrations';
 import { useApplyPlan } from '@/lib/queries/planner';
 import { formatDay, formatTime } from '@/lib/time';
 
@@ -55,7 +56,18 @@ export interface PlanPreviewProps {
 export function PlanPreview({ plan, onApplied, onCancel }: PlanPreviewProps) {
   const apply = useApplyPlan();
   const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  /*
+   * Off every time this panel opens, deliberately, and not remembered.
+   *
+   * Publishing is the only thing here that other people can see. A remembered preference would
+   * mean somebody's colleagues learning about a change to their week from a box that was ticked
+   * weeks ago, so the decision is made again each time a plan is approved.
+   */
+  const [publish, setPublish] = useState(false);
+  const integrations = useIntegrations();
+  const writable = integrations.data?.some((account) => account.canWriteCalendar) ?? false;
 
+  const [failures, setFailures] = useState<PublishOutcome[]>([]);
   const included = plan.blocks.filter((block) => !excluded.has(block.taskId));
   const stale = apply.isError && (apply.error as { code?: string } | null)?.code === 'PLAN_STALE';
 
@@ -73,8 +85,10 @@ export function PlanPreview({ plan, onApplied, onCancel }: PlanPreviewProps) {
     if (included.length === 0) return;
     try {
       const result = await apply.mutateAsync({
+        ...(publish && writable ? { publishToCalendar: true } : {}),
         blocks: included.map(({ taskId, startAt, endAt }) => ({ taskId, startAt, endAt })),
       });
+      setFailures(result.published?.filter((outcome) => outcome.status === 'failed') ?? []);
       onApplied?.(result.applied);
     } catch {
       /* shown through apply.isError */
@@ -157,6 +171,35 @@ export function PlanPreview({ plan, onApplied, onCancel }: PlanPreviewProps) {
                 ? 'Your day changed while this plan was open. Nothing was saved.'
                 : 'That plan could not be applied. Nothing was saved.'
             }
+          />
+        </div>
+      ) : null}
+
+      {/* Only when there is a calendar that would take it. An offer that cannot be honoured is
+          worse than no offer: somebody ticks it, applies, and finds out from an error. */}
+      {writable ? (
+        <div className="mt-5 border-t border-border pt-4">
+          <Checkbox
+            checked={publish}
+            onChange={(event) => {
+              setPublish(event.target.checked);
+            }}
+            label={<span className="text-[13px] text-primary">Also put these on my calendar</span>}
+            description={
+              <span className="text-[12px] text-muted">
+                Creates an event for each block on your connected calendar, marked free rather than
+                busy. Rescheduling or finishing the work moves or removes it.
+              </span>
+            }
+          />
+        </div>
+      ) : null}
+
+      {failures.length > 0 ? (
+        <div className="mt-4">
+          <ErrorNotice
+            title="Your plan was saved. Some blocks did not reach the calendar."
+            description={failures[0]?.reason ?? null}
           />
         </div>
       ) : null}
