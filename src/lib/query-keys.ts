@@ -8,6 +8,7 @@ export const queryKeys = {
   tasks: (filters: Record<string, unknown> = {}) => ['tasks', filters] as const,
   task: (id: string) => ['tasks', 'detail', id] as const,
   inbox: ['inbox'] as const,
+  notifications: ['notifications'] as const,
   spaces: ['spaces'] as const,
   projects: ['projects'] as const,
   preferences: ['preferences'] as const,

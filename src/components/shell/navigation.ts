@@ -1,4 +1,5 @@
 import {
+  Bell,
   Calendar,
   Inbox,
   LayoutGrid,
@@ -29,6 +30,18 @@ export const primaryNav: readonly NavItem[] = [
   { href: '/spaces', label: 'Spaces', icon: LayoutGrid, key: 'p' },
   { href: '/search', label: 'Search', icon: Search, key: 's' },
 ];
+
+/**
+ * Not in the primary rail. What happened while you were away is a place you go once and clear,
+ * not one of the eight screens Scalar is made of, and putting it up there would push Today,
+ * Inbox and Tasks down for something that is empty most days.
+ */
+export const notificationsNav: NavItem = {
+  href: '/notifications',
+  label: 'Notifications',
+  icon: Bell,
+  key: 'n',
+};
 
 export const settingsNav: NavItem = {
   href: '/settings',

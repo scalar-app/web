@@ -15,6 +15,9 @@ vi.mock('@/lib/api', () => ({
     tasks: {
       list: () => Promise.resolve({ data: [{ id: 't1' }, { id: 't2' }], nextCursor: null }),
     },
+    notifications: {
+      list: () => Promise.resolve({ data: [], nextCursor: null, unreadCount: 3 }),
+    },
     auth: { logout: () => Promise.resolve() },
   },
 }));
@@ -31,6 +34,22 @@ function renderSidebar() {
 describe('Sidebar', () => {
   beforeEach(() => {
     window.localStorage.clear();
+  });
+
+  /**
+   * The badge counts unread notifications, not all of them: one that never cleared would be a
+   * light nobody can turn off, and after a week of that it stops being read at all.
+   */
+  it('shows how many notifications are unread', async () => {
+    renderSidebar();
+
+    // Expanded, the count is a badge beside the name rather than part of it, and it carries its
+    // own label so a screen reader says "3 waiting" instead of reading a bare numeral.
+    expect(await screen.findByLabelText('3 waiting')).toHaveTextContent('3');
+    expect(screen.getByRole('link', { name: /Notifications/ })).toHaveAttribute(
+      'href',
+      '/notifications',
+    );
   });
 
   it('starts expanded when nothing has been remembered', () => {
