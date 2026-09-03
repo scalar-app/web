@@ -107,6 +107,24 @@ export function useRemoveMember(workspaceId: string | null) {
   });
 }
 
+export function useTransferOwnership(workspaceId: string | null) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: string) =>
+      scalar.workspaces.transferOwnership(workspaceId ?? '', { userId }),
+    // The caller's own role changed, so the session context is stale as well as the member list.
+    onSuccess: () => client.invalidateQueries(),
+  });
+}
+
+export function useDeleteWorkspace(workspaceId: string | null) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => scalar.workspaces.delete(workspaceId ?? '', { name }),
+    onSuccess: () => client.invalidateQueries(),
+  });
+}
+
 export function useInvitationPreview(token: string) {
   return useQuery({
     queryKey: queryKeys.invitation(token),

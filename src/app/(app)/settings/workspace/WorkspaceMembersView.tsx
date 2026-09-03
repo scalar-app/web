@@ -2,16 +2,19 @@
 
 import type { Invitation, WorkspaceMember, WorkspaceRole } from '@scalar/sdk';
 import { Badge, Button, EmptyState, Input, Panel, Select, Spinner } from '@scalar/ui';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
 import { useSessionContext } from '@/lib/queries/auth';
 import {
+  useDeleteWorkspace,
   useInvitations,
   useInvite,
   useMembers,
   useRemoveMember,
   useRevokeInvitation,
+  useTransferOwnership,
   useUpdateMemberRole,
 } from '@/lib/queries/workspaces';
 
@@ -50,6 +53,8 @@ function MemberRow({
 }) {
   const updateRole = useUpdateMemberRole(workspaceId);
   const remove = useRemoveMember(workspaceId);
+  const transfer = useTransferOwnership(workspaceId);
+  const [handingOver, setHandingOver] = useState(false);
 
   // The owner is fixed, and only the owner may change anybody's role.
   const mayChangeRole = viewerRole === 'owner' && member.role !== 'owner';
@@ -87,6 +92,30 @@ function MemberRow({
         </Badge>
       )}
 
+      {/*
+        Handing the workspace over is the only way an owner can ever leave, so it lives next to the
+        person receiving it rather than in a settings page of its own. Two steps, because it cannot
+        be undone without the other person's help.
+      */}
+      {viewerRole === 'owner' && !isSelf && member.role !== 'owner' ? (
+        handingOver ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            loading={transfer.isPending}
+            onClick={() =>
+              transfer.mutate(member.userId, { onSuccess: () => setHandingOver(false) })
+            }
+          >
+            Yes, hand it to {member.email}
+          </Button>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => setHandingOver(true)}>
+            Make owner
+          </Button>
+        )
+      ) : null}
+
       {mayRemove ? (
         <Button
           size="sm"
@@ -98,6 +127,68 @@ function MemberRow({
         </Button>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * Shutting a workspace down.
+ *
+ * Everything in it goes, for everybody, and there is no undo. The name has to be typed, which the
+ * API checks as well: a confirmation only the browser enforces is one a stale tab skips. It is the
+ * last thing on the page and it is not styled to be attractive.
+ */
+function DangerZone({ workspaceId, name }: { workspaceId: string; name: string }) {
+  const remove = useDeleteWorkspace(workspaceId);
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const router = useRouter();
+
+  return (
+    <Panel title="Delete this workspace">
+      <p className="text-[13px] text-secondary">
+        Every task, event, project and conversation in {name} is deleted, for everybody in it. This
+        cannot be undone. Your own workspace is not touched.
+      </p>
+      {open ? (
+        <form
+          className="mt-4 flex flex-wrap items-end gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            remove.mutate(typed, { onSuccess: () => router.replace('/today') });
+          }}
+        >
+          <label className="min-w-[16rem] flex-1 text-[12px] text-secondary">
+            Type {name} to confirm
+            <Input
+              className="mt-1"
+              value={typed}
+              onChange={(event) => setTyped(event.target.value)}
+              aria-label={`Type ${name} to confirm`}
+            />
+          </label>
+          <Button type="submit" size="sm" variant="danger" loading={remove.isPending}>
+            Delete workspace
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+        </form>
+      ) : (
+        <div className="mt-4">
+          <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+            Delete workspace
+          </Button>
+        </div>
+      )}
+      {remove.isError ? (
+        <div className="mt-4">
+          <ErrorNotice
+            title="Nothing was deleted."
+            description={(remove.error as { message?: string } | null)?.message ?? null}
+          />
+        </div>
+      ) : null}
+    </Panel>
   );
 }
 
@@ -290,6 +381,12 @@ export function WorkspaceMembersView() {
               </ul>
             )}
           </Panel>
+        </div>
+      ) : null}
+
+      {viewerRole === 'owner' && workspaceId ? (
+        <div className="mt-6">
+          <DangerZone workspaceId={workspaceId} name={workspace?.name ?? ''} />
         </div>
       ) : null}
     </>
