@@ -47,6 +47,21 @@ export function useSession(): SessionState {
   return { status: 'unreachable', reason: 'error', retry };
 }
 
+/**
+ * The user *and* the workspace this session is looking at.
+ *
+ * `useSession` narrows to the user, which is what most of the app wants. Anything that has to name
+ * the workspace -- the switcher, the members page -- needs this instead, and it shares the cache
+ * key with `/me` because it is the same request.
+ */
+export function useSessionContext() {
+  return useQuery({
+    queryKey: queryKeys.meContext,
+    queryFn: () => scalar.me.context(),
+    staleTime: 60_000,
+  });
+}
+
 export function useRequestMagicLink() {
   return useMutation({
     mutationFn: (email: string) => scalar.auth.requestMagicLink({ email }),

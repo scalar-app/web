@@ -9,6 +9,7 @@ import { useSession, useLogout } from '@/lib/queries/auth';
 import { useNotifications } from '@/lib/queries/notifications';
 import { useTasks } from '@/lib/queries/tasks';
 import { notificationsNav, primaryNav, settingsNav, type NavItem } from './navigation';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { useGoToNavigation } from './useGoToNavigation';
 import { useSidebarCollapsed } from './useSidebarCollapsed';
 
@@ -120,6 +121,8 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
       <div className={cx('mb-6 flex', collapsed ? 'justify-center' : 'px-3')}>
         <Logo wordmark={!collapsed} />
       </div>
+
+      <WorkspaceSwitcher collapsed={collapsed} />
 
       <button
         type="button"
