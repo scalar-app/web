@@ -11,6 +11,11 @@ const invite = vi.fn();
 const removeMember = vi.fn();
 const updateMemberRole = vi.fn();
 const revokeInvitation = vi.fn();
+const transferOwnership = vi.fn();
+const deleteWorkspace = vi.fn();
+const replace = vi.fn();
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 vi.mock('@/lib/api', () => ({
   scalar: {
@@ -24,6 +29,8 @@ vi.mock('@/lib/api', () => ({
         updateMemberRole(id, userId, input) as unknown,
       revokeInvitation: (id: string, invitationId: string) =>
         revokeInvitation(id, invitationId) as unknown,
+      transferOwnership: (id: string, input: unknown) => transferOwnership(id, input) as unknown,
+      delete: (id: string, input: unknown) => deleteWorkspace(id, input) as unknown,
     },
   },
 }));
@@ -65,6 +72,9 @@ describe('WorkspaceMembersView', () => {
     removeMember.mockReset().mockResolvedValue(undefined);
     updateMemberRole.mockReset().mockResolvedValue(member({ role: 'admin' }));
     revokeInvitation.mockReset().mockResolvedValue(undefined);
+    transferOwnership.mockReset().mockResolvedValue([]);
+    deleteWorkspace.mockReset().mockResolvedValue(undefined);
+    replace.mockReset();
   });
 
   it('lists who is in the workspace', async () => {
@@ -165,6 +175,55 @@ describe('WorkspaceMembersView', () => {
 
     expect(await screen.findByText('grace@example.com')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Leave' })).not.toBeInTheDocument();
+  });
+
+  /**
+   * Handing the workspace over is the only way an owner can ever leave, which is why it sits beside
+   * the person receiving it. Two steps, because it cannot be undone without their help.
+   */
+  it('hands the workspace over in two steps', async () => {
+    render(<WorkspaceMembersView />, { wrapper });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Make owner' }));
+    expect(transferOwnership).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Yes, hand it to grace@example.com' }),
+    );
+
+    await waitFor(() => {
+      expect(transferOwnership).toHaveBeenCalledWith('ws_1', { userId: 'u_them' });
+    });
+  });
+
+  it('offers handing over only to the owner', async () => {
+    context.mockResolvedValue(sessionAs('admin'));
+    render(<WorkspaceMembersView />, { wrapper });
+
+    expect(await screen.findByText('grace@example.com')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Make owner' })).not.toBeInTheDocument();
+  });
+
+  /** Deleting takes everything, for everybody, with no undo, so the name is typed back. */
+  it('deletes only after the name is typed', async () => {
+    render(<WorkspaceMembersView />, { wrapper });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Delete workspace' }));
+    await userEvent.type(screen.getByLabelText('Type Thesis to confirm'), 'Thesis');
+    await userEvent.click(screen.getByRole('button', { name: 'Delete workspace' }));
+
+    await waitFor(() => {
+      expect(deleteWorkspace).toHaveBeenCalledWith('ws_1', { name: 'Thesis' });
+    });
+    expect(replace).toHaveBeenCalledWith('/today');
+  });
+
+  it('offers deletion only to the owner', async () => {
+    context.mockResolvedValue(sessionAs('admin'));
+    render(<WorkspaceMembersView />, { wrapper });
+
+    expect(await screen.findByText('grace@example.com')).toBeInTheDocument();
+    expect(screen.queryByText('Delete this workspace')).not.toBeInTheDocument();
   });
 
   it('lets a member leave', async () => {
