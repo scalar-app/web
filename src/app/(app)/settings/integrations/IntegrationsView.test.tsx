@@ -11,7 +11,8 @@ vi.mock('@/lib/api', () => ({
   scalar: {
     integrations: {
       list: () => list() as unknown,
-      connectGoogle: (provider: string) => connectGoogle(provider) as unknown,
+      connectGoogle: (provider: string, options?: unknown) =>
+        connectGoogle(provider, options) as unknown,
       sync: () => Promise.resolve(),
       disconnect: () => Promise.resolve(),
     },
@@ -32,6 +33,7 @@ function account(over: Record<string, unknown> = {}) {
     displayName: 'mail@example.com',
     status: 'active',
     connectedAt: '2026-09-01T10:00:00.000Z',
+    canWriteCalendar: false,
     resources: [
       {
         resourceId: 'STARRED',
@@ -79,8 +81,44 @@ describe('IntegrationsView', () => {
     // Connecting mail must not go through the calendar's consent: separate products, separate
     // scopes, separate accounts.
     await waitFor(() => {
-      expect(connectGoogle).toHaveBeenCalledWith('gmail');
+      expect(connectGoogle).toHaveBeenCalledWith('gmail', undefined);
     });
+  });
+
+  /**
+   * Writing to a calendar is a separate consent from reading it. Somebody who connected a calendar
+   * to see their week has not agreed to Scalar changing it, so this is asked for on its own and
+   * goes back to Google, because the permission is Google's to give.
+   */
+  it('offers calendar writing as its own decision, and says what it means', async () => {
+    list.mockResolvedValue([
+      account({ provider: 'google_calendar', displayName: 'ada@example.com', resources: [] }),
+    ]);
+    render(<IntegrationsView />, { wrapper });
+
+    expect(await screen.findByText('Putting plans on this calendar')).toBeInTheDocument();
+    expect(screen.getByText(/other people can see/)).toBeInTheDocument();
+    expect(screen.getByText(/without you asking at the time/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Allow Scalar to add events' }));
+
+    await waitFor(() => {
+      expect(connectGoogle).toHaveBeenCalledWith('google_calendar', { access: 'write' });
+    });
+  });
+
+  it('stops asking once the calendar may be written to', async () => {
+    list.mockResolvedValue([
+      account({ provider: 'google_calendar', resources: [], canWriteCalendar: true }),
+    ]);
+    render(<IntegrationsView />, { wrapper });
+
+    expect(await screen.findByText('Allowed')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Allow Scalar to add events' }),
+    ).not.toBeInTheDocument();
+    // The promise that makes it safe to say yes.
+    expect(screen.getByText(/only ever changes events it created/)).toBeInTheDocument();
   });
 
   it('stops offering Gmail once a mailbox is connected', async () => {
