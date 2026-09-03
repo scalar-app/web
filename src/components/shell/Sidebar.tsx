@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '../Logo';
 import { useSession, useLogout } from '@/lib/queries/auth';
+import { useNotifications } from '@/lib/queries/notifications';
 import { useTasks } from '@/lib/queries/tasks';
-import { primaryNav, settingsNav, type NavItem } from './navigation';
+import { notificationsNav, primaryNav, settingsNav, type NavItem } from './navigation';
 import { useGoToNavigation } from './useGoToNavigation';
 import { useSidebarCollapsed } from './useSidebarCollapsed';
 
@@ -99,6 +100,10 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
   const inbox = useTasks({ status: ['inbox'], limit: 100 });
   const waiting = inbox.data?.data.length ?? 0;
 
+  // Unread, not total: a badge counting things somebody has already read would never clear.
+  const notifications = useNotifications();
+  const unread = notifications.data?.unreadCount ?? 0;
+
   const logout = useLogout({ onSettled: () => router.replace('/login') });
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
@@ -156,6 +161,13 @@ export function Sidebar({ onOpenCommand }: { onOpenCommand: () => void }) {
 
       <div className="mt-4 border-t border-border pt-3">
         <nav aria-label="Account" className="flex flex-col gap-0.5">
+          <NavLink
+            item={notificationsNav}
+            active={isActive(notificationsNav.href)}
+            showKey={armed}
+            collapsed={collapsed}
+            badge={unread}
+          />
           <NavLink
             item={settingsNav}
             active={isActive(settingsNav.href)}

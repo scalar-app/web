@@ -68,3 +68,22 @@ export function describeDue(
   if (due < dayAfter) return { label: `Tomorrow ${formatTime(iso)}`, tone: 'neutral' };
   return { label: formatDay(due), tone: 'neutral' };
 }
+
+/**
+ * When something happened, in the words a person would use.
+ *
+ * Relative for the last day, because "4 hours ago" is what somebody wants to know about a
+ * notification, and absolute after that, because "73 hours ago" is arithmetic homework. The
+ * boundary is a day rather than a week: past that, the date is the more useful fact.
+ */
+export function describeWhen(iso: string, now: Date = new Date()): string {
+  const at = new Date(iso);
+  const seconds = Math.round((now.getTime() - at.getTime()) / 1000);
+  // A clock that is a little behind the server should not produce "in 3 seconds".
+  if (seconds < 60) return 'Just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${String(minutes)} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${String(hours)} hour${hours === 1 ? '' : 's'} ago`;
+  return `${formatDay(at)} ${formatTime(iso)}`;
+}
