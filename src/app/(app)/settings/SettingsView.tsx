@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { AiStatus } from '@/components/settings/AiStatus';
+import { DataExport } from '@/components/settings/DataExport';
 import { Diagnostics } from '@/components/settings/Diagnostics';
 import { PlanningSettings } from '@/components/settings/PlanningSettings';
 import { apiUrl } from '@/lib/api';
@@ -60,6 +61,9 @@ export function SettingsView() {
         </Panel>
       </div>
       <div className="mt-6">
+        <DataExport />
+      </div>
+      <div className="mt-6">
         <Diagnostics />
       </div>
       <div className="mt-6">
@@ -98,7 +102,7 @@ export function SettingsView() {
       </div>
 
       <p className="mt-6 text-[12px] text-muted">
-        Notifications and data export will appear here as they are built.
+        Notifications will appear here as they are built.
       </p>
     </>
   );
