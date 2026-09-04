@@ -16,7 +16,18 @@ import { useActivateWorkspace, useCreateWorkspace, useWorkspaces } from '@/lib/q
  * Nothing appears here for somebody with one workspace, which is most people. A switcher with one
  * entry is a control that teaches you it does nothing.
  */
-export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
+export function WorkspaceSwitcher({
+  collapsed = false,
+  variant = 'rail',
+}: {
+  collapsed?: boolean;
+  /**
+   * `rail` is the sidebar: full width, with room below it. `bar` is the phone's top bar, where the
+   * control sits inline beside the other buttons and the menu hangs from the left rather than
+   * stretching the header.
+   */
+  variant?: 'rail' | 'bar';
+}) {
   const workspaces = useWorkspaces();
   const context = useSessionContext();
   const activate = useActivateWorkspace();
@@ -48,7 +59,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   if (!current || (all.length < 2 && !open)) {
     // One workspace and nothing open: show the name, quietly, with the way to make another.
     return (
-      <div ref={box} className="relative mb-4">
+      <div ref={box} className={cx('relative', variant === 'rail' && 'mb-4')}>
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -75,7 +86,12 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
 
   function Menu() {
     return (
-      <div className="absolute top-full right-0 left-0 z-20 mt-1 rounded-md border border-border bg-raised p-1 shadow-lg">
+      <div
+        className={cx(
+          'absolute top-full z-20 mt-1 rounded-md border border-border bg-raised p-1 shadow-lg',
+          variant === 'rail' ? 'right-0 left-0' : 'left-0 min-w-[14rem]',
+        )}
+      >
         <ul className="flex flex-col">
           {all.map((workspace) => (
             <li key={workspace.id}>
@@ -147,7 +163,7 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   }
 
   return (
-    <div ref={box} className="relative mb-4">
+    <div ref={box} className={cx('relative', variant === 'rail' ? 'mb-4' : 'min-w-0 flex-1')}>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -156,7 +172,12 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         aria-label={collapsed ? `Workspace: ${current.name}` : undefined}
         title={collapsed ? current.name : undefined}
         className={cx(
-          'flex w-full items-center rounded-md border border-border py-1.5 text-[12px] text-secondary transition-colors hover:border-muted hover:text-primary',
+          'flex w-full items-center rounded-md text-secondary transition-colors hover:text-primary',
+          variant === 'rail'
+            ? 'border border-border py-1.5 text-[12px] hover:border-muted'
+            : // On a phone the bar is the only place the workspace is named, so it reads as a
+              // heading rather than as a control squeezed in beside the buttons.
+              'min-h-11 py-2 text-[15px] text-primary',
           collapsed ? 'justify-center px-0' : 'gap-2 px-3',
         )}
       >

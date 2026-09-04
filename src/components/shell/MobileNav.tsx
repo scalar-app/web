@@ -1,12 +1,13 @@
 'use client';
 
 import { cx } from '@scalar/ui';
-import { Search, Settings } from 'lucide-react';
+import { Bell, Search, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from '../Logo';
+import { useNotifications } from '@/lib/queries/notifications';
 import { useTasks } from '@/lib/queries/tasks';
-import { primaryNav, settingsNav, type NavItem } from './navigation';
+import { notificationsNav, primaryNav, settingsNav, type NavItem } from './navigation';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 
 /**
  * Phone navigation: a title bar at the top and a tab bar at the bottom, where a thumb is.
@@ -60,27 +61,56 @@ function Tab({ item, active, badge }: { item: NavItem; active: boolean; badge?: 
   );
 }
 
+/**
+ * The top bar carries the workspace, not the wordmark.
+ *
+ * The sidebar is hidden on a phone, and it was the only place the workspace was named. That was
+ * survivable while everybody had exactly one; it stopped being survivable the day a workspace could
+ * be shared, because somebody capturing a thought has to be able to see which workspace it is
+ * about to land in. On a 375px bar the app's own name is the least useful thing there and the
+ * workspace is the most useful, so the wordmark gives up the space.
+ */
 export function MobileTopBar({ onOpenCommand }: { onOpenCommand: () => void }) {
+  const notifications = useNotifications();
+  const unread = notifications.data?.unreadCount ?? 0;
+  const pathname = usePathname();
+
   return (
-    <header className="flex items-center justify-between border-b border-border bg-background px-4 py-3 md:hidden">
-      <Logo />
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={onOpenCommand}
-          aria-label="Open command"
-          className="flex h-11 w-11 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
-        >
-          <Search size={18} strokeWidth={1.75} aria-hidden />
-        </button>
-        <Link
-          href={settingsNav.href}
-          aria-label="Settings"
-          className="flex h-11 w-11 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
-        >
-          <Settings size={18} strokeWidth={1.75} aria-hidden />
-        </Link>
-      </div>
+    <header className="flex items-center gap-1 border-b border-border bg-background px-3 py-2 md:hidden">
+      <WorkspaceSwitcher variant="bar" />
+
+      <Link
+        href={notificationsNav.href}
+        aria-label={unread > 0 ? `Notifications, ${String(unread)} unread` : 'Notifications'}
+        aria-current={pathname === notificationsNav.href ? 'page' : undefined}
+        className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
+      >
+        <Bell size={18} strokeWidth={1.75} aria-hidden />
+        {/* A dot rather than a number: the count is in the accessible name, and a numeral this
+            small on a phone is decoration rather than information. */}
+        {unread > 0 ? (
+          <span
+            aria-hidden="true"
+            className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-yellow"
+          />
+        ) : null}
+      </Link>
+
+      <button
+        type="button"
+        onClick={onOpenCommand}
+        aria-label="Open command"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
+      >
+        <Search size={18} strokeWidth={1.75} aria-hidden />
+      </button>
+      <Link
+        href={settingsNav.href}
+        aria-label="Settings"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-secondary hover:bg-surface hover:text-primary"
+      >
+        <Settings size={18} strokeWidth={1.75} aria-hidden />
+      </Link>
     </header>
   );
 }
