@@ -40,6 +40,24 @@ export function WorkspaceSwitcher({
   const current = context.data?.workspace ?? null;
   const all = workspaces.data ?? [];
 
+  /*
+   * One class list for both branches below.
+   *
+   * They used to be written out twice, and the quiet one -- the branch somebody with a single
+   * workspace always gets, which is most people -- kept the rail's 12px muted styling even in the
+   * phone's top bar: a 30px target reading as a caption, in the one place the workspace has to be
+   * legible. Two copies of a style is two chances to style the common case as the exception.
+   */
+  const trigger = cx(
+    'flex w-full items-center rounded-md transition-colors',
+    variant === 'rail'
+      ? 'border border-border py-1.5 text-[12px] text-secondary hover:border-muted hover:text-primary'
+      : // On a phone this is the only place the workspace is named, so it reads as a heading and
+        // is big enough to hit.
+        'min-h-11 py-2 text-[15px] text-primary hover:text-primary',
+    collapsed ? 'justify-center px-0' : 'gap-2 px-3',
+  );
+
   useEffect(() => {
     if (!open) return;
     function onPointer(event: MouseEvent): void {
@@ -65,10 +83,8 @@ export function WorkspaceSwitcher({
           onClick={() => setOpen(true)}
           aria-label={collapsed ? `Workspace: ${current?.name ?? ''}` : undefined}
           title={collapsed ? current?.name : undefined}
-          className={cx(
-            'flex w-full items-center rounded-md py-1.5 text-[12px] text-muted transition-colors hover:bg-surface hover:text-secondary',
-            collapsed ? 'justify-center px-0' : 'gap-2 px-3',
-          )}
+          // Quieter in the rail, where it is one of many rows; the same everywhere else.
+          className={cx(trigger, variant === 'rail' && 'border-transparent text-muted')}
         >
           {collapsed ? (
             <ChevronsUpDown size={14} aria-hidden />
@@ -171,15 +187,7 @@ export function WorkspaceSwitcher({
         aria-expanded={open}
         aria-label={collapsed ? `Workspace: ${current.name}` : undefined}
         title={collapsed ? current.name : undefined}
-        className={cx(
-          'flex w-full items-center rounded-md text-secondary transition-colors hover:text-primary',
-          variant === 'rail'
-            ? 'border border-border py-1.5 text-[12px] hover:border-muted'
-            : // On a phone the bar is the only place the workspace is named, so it reads as a
-              // heading rather than as a control squeezed in beside the buttons.
-              'min-h-11 py-2 text-[15px] text-primary',
-          collapsed ? 'justify-center px-0' : 'gap-2 px-3',
-        )}
+        className={trigger}
       >
         {collapsed ? (
           <ChevronsUpDown size={14} aria-hidden />

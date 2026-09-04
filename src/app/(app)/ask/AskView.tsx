@@ -277,7 +277,7 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
                     <button
                       type="button"
                       onClick={() => void send(suggestion)}
-                      className="rounded-md border border-border px-3 py-2 text-left text-[13px] text-secondary hover:bg-raised hover:text-primary"
+                      className="rounded-md border border-border px-3 py-2 text-left text-[13px] text-secondary hover:bg-raised hover:text-primary coarse:min-h-11"
                     >
                       {suggestion}
                     </button>
