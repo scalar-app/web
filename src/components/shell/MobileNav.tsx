@@ -76,7 +76,12 @@ export function MobileTopBar({ onOpenCommand }: { onOpenCommand: () => void }) {
   const pathname = usePathname();
 
   return (
-    <header className="flex items-center gap-1 border-b border-border bg-background px-3 py-2 md:hidden">
+    <header
+      className="flex items-center gap-1 border-b border-border bg-background px-3 py-2 md:hidden"
+      // The status bar and the notch. In a browser this is 0 and nothing moves; in the packaged
+      // app it is the difference between a header and a header with a clock through it.
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--sc-space-2))' }}
+    >
       <WorkspaceSwitcher variant="bar" />
 
       <Link
@@ -126,7 +131,13 @@ export function MobileTabBar() {
       aria-label="Primary"
       // The inline padding clears the home indicator on iPhones without affecting other devices.
       className="flex shrink-0 items-stretch border-t border-border bg-background md:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      // Left and right matter in landscape, where the notch is beside the tabs rather than above
+      // them, and the home indicator is still below.
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        paddingLeft: 'env(safe-area-inset-left, 0px)',
+        paddingRight: 'env(safe-area-inset-right, 0px)',
+      }}
     >
       {TABS.map((item) => (
         <Tab

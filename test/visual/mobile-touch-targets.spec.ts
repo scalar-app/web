@@ -191,3 +191,53 @@ test('a checkbox can be hit from outside its box', async ({ page }) => {
 
   await expect(checkbox).toBeChecked({ checked: !before });
 });
+
+/**
+ * Two things a phone does that a desktop browser never will.
+ *
+ * Neither is visible in a component test, and neither is visible at a desktop viewport either:
+ * they are properties of the device and of the page's own head.
+ */
+test('a field cannot make iOS zoom the page', async ({ page }) => {
+  await stubApi(page);
+  await page.goto('/tasks');
+
+  const input = page.locator('input[type=text], input:not([type])').first();
+  await expect(input).toBeVisible();
+  const fontSize = await input.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+
+  // Mobile Safari and every iOS WKWebView zoom the page when a field under 16px takes focus, and
+  // they do not zoom back out. The font size is the whole fix.
+  expect(fontSize).toBeGreaterThanOrEqual(16);
+});
+
+test('the page draws into the safe areas rather than around them', async ({ page }) => {
+  await stubApi(page);
+  await page.goto('/today');
+
+  // Wait for the shell, not for a timeout. The first version of this test read the document as
+  // soon as `goto` resolved and passed locally by luck: with nothing rendered yet there is no
+  // header at all, and "no header" and "a header without padding" both read as an empty string.
+  const bell = page.getByRole('link', { name: /Notifications/ });
+  await expect(bell).toBeVisible();
+
+  // `env(safe-area-inset-*)` is 0 everywhere without this, which makes every inset in the shell
+  // decorative. It is one word in the viewport meta and nothing else reveals its absence.
+  const viewport = await page.locator('meta[name=viewport]').getAttribute('content');
+  expect(viewport).toContain('viewport-fit=cover');
+
+  /*
+   * Found through a control that exists only in the phone's top bar.
+   *
+   * "The first visible header" is not that: `PageHeader` renders one too, and the sidebar's
+   * navigation carries the same `aria-label` as the tab bar while being `display: none` rather
+   * than absent, so a positional query can land on either of the wrong two.
+   */
+  const top = await bell.evaluate((el) => el.closest('header')?.getAttribute('style') ?? '');
+  expect(top).toContain('safe-area-inset-top');
+
+  const bottom = await page
+    .getByRole('link', { name: 'Today' })
+    .evaluate((el) => el.closest('nav')?.getAttribute('style') ?? '');
+  expect(bottom).toContain('safe-area-inset-bottom');
+});
