@@ -1,6 +1,18 @@
 @import 'tailwindcss';
 @import '@scalar/ui/styles.css';
 
+/*
+ * `coarse:` sizes a control for a finger rather than for a cursor.
+ *
+ * `@scalar/ui` does this for its own components in one media query, but a screen that hand-rolls a
+ * control -- a tab strip, a suggestion chip -- gets no help from that, and those were the smallest
+ * targets left on a phone. This is the same question the library asks, available as a utility.
+ *
+ * It asks the device, not the width. A tablet with a keyboard is wide and still touched; a phone
+ * browser with a stylus is neither. Sizing on a breakpoint gets both of those wrong.
+ */
+@custom-variant coarse (@media (pointer: coarse));
+
 /* Tailwind utilities read the canonical @scalar/ui tokens. Do not add raw colors here. */
 @theme inline {
   --color-background: var(--sc-color-background);

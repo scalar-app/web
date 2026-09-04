@@ -39,7 +39,12 @@ export function TasksView() {
                 aria-selected={filter === value}
                 type="button"
                 onClick={() => setFilter(value)}
-                className={`rounded px-2.5 py-1 text-[12px] capitalize ${filter === value ? 'bg-raised text-primary' : 'text-secondary hover:text-primary'}`}
+                /*
+                 * `min-h-11` on a coarse pointer only: these are hand-rolled tabs rather than
+                 * `@scalar/ui` buttons, so the library's touch sizing does not reach them, and at
+                 * 26px they were the smallest thing on the busiest screen in the app.
+                 */
+                className={`rounded px-2.5 py-1 text-[12px] capitalize coarse:min-h-11 coarse:px-4 ${filter === value ? 'bg-raised text-primary' : 'text-secondary hover:text-primary'}`}
               >
                 {value}
               </button>
