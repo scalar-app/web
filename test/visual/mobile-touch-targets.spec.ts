@@ -191,3 +191,49 @@ test('a checkbox can be hit from outside its box', async ({ page }) => {
 
   await expect(checkbox).toBeChecked({ checked: !before });
 });
+
+/**
+ * Two things a phone does that a desktop browser never will.
+ *
+ * Neither is visible in a component test, and neither is visible at a desktop viewport either:
+ * they are properties of the device and of the page's own head.
+ */
+test('a field cannot make iOS zoom the page', async ({ page }) => {
+  await stubApi(page);
+  await page.goto('/tasks');
+
+  const input = page.locator('input[type=text], input:not([type])').first();
+  await expect(input).toBeVisible();
+  const fontSize = await input.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+
+  // Mobile Safari and every iOS WKWebView zoom the page when a field under 16px takes focus, and
+  // they do not zoom back out. The font size is the whole fix.
+  expect(fontSize).toBeGreaterThanOrEqual(16);
+});
+
+test('the page draws into the safe areas rather than around them', async ({ page }) => {
+  await stubApi(page);
+  await page.goto('/today');
+
+  // `env(safe-area-inset-*)` is 0 everywhere without this, which makes every inset in the shell
+  // decorative. It is one word in the viewport meta and nothing else reveals its absence.
+  const viewport = await page.locator('meta[name=viewport]').getAttribute('content');
+  expect(viewport).toContain('viewport-fit=cover');
+
+  const usesInsets = await page.evaluate(() => {
+    /*
+     * The visible one. Both the sidebar and the tab bar are `nav[aria-label="Primary"]`, and the
+     * sidebar is still in the document at this width -- it is `display: none`, not absent -- so
+     * `querySelector` returns the one that is not on screen.
+     */
+    const onScreen = (el: Element) => el.getBoundingClientRect().height > 0;
+    const bar = [...document.querySelectorAll('header')].find(onScreen);
+    const tabs = [...document.querySelectorAll('nav[aria-label="Primary"]')].find(onScreen);
+    return {
+      top: bar?.getAttribute('style') ?? '',
+      bottom: tabs?.getAttribute('style') ?? '',
+    };
+  });
+  expect(usesInsets.top).toContain('safe-area-inset-top');
+  expect(usesInsets.bottom).toContain('safe-area-inset-bottom');
+});
