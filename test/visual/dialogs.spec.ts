@@ -119,3 +119,48 @@ test('a dialog never grows past the screen it is on', async ({ page }) => {
   const offset = await offsetFromCentre(page);
   expect(offset!.height).toBeLessThanOrEqual(offset!.viewportHeight);
 });
+
+/**
+ * A dialog leaves the notch and the home indicator alone.
+ *
+ * The shell learned this months ago -- the phone's top bar pads for `safe-area-inset-top` and its
+ * tab bar for `safe-area-inset-bottom` -- and the dialog never did: it measured `max-height`
+ * against the whole viewport, so a dialog tall enough to reach that limit put its header under
+ * the status bar and its footer under the home indicator. On an iPhone the top inset is 59px and
+ * the margin that was supposed to cover it is 32px.
+ *
+ * Chromium reports every inset as 0 and offers no way to set one, so there is no viewport at
+ * which this can be caught by measuring: `env()` is resolved away by the time `getComputedStyle`
+ * can see it, and a dialog that fits a laptop fits it either way. What can be checked is that the
+ * rule takes the insets off at all, which is precisely the thing that was missing -- the same
+ * question `mobile-touch-targets` asks of the shell's own inline styles, asked of a stylesheet.
+ */
+test('the dialog takes the safe areas out of its own size', async ({ page }) => {
+  await stubApi(page);
+  await page.goto('/settings/integrations');
+  await page.getByRole('button', { name: 'Disconnect' }).first().click();
+  await expect(page.getByRole('button', { name: 'Delete events' })).toBeVisible();
+
+  const rule = await page.evaluate(() => {
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules: CSSRule[];
+      try {
+        rules = Array.from(sheet.cssRules);
+      } catch {
+        continue; // A stylesheet from another origin. None of ours are, so it is not the one.
+      }
+      for (const item of rules) {
+        if (item instanceof CSSStyleRule && item.selectorText === '.sc-dialog') return item.cssText;
+      }
+    }
+    return null;
+  });
+
+  expect(rule, '.sc-dialog is not in any stylesheet the page loaded').not.toBeNull();
+  // Height clears the notch and the home indicator; width clears them in landscape, where the
+  // notch is beside the dialog rather than above it.
+  expect(rule).toContain('safe-area-inset-top');
+  expect(rule).toContain('safe-area-inset-bottom');
+  expect(rule).toContain('safe-area-inset-left');
+  expect(rule).toContain('safe-area-inset-right');
+});

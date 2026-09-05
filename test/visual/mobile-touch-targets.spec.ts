@@ -126,8 +126,15 @@ async function stubApi(page: Page) {
 async function boxControls(page: Page) {
   return page.evaluate(() => {
     const out: { name: string; height: number; width: number }[] = [];
+    /*
+     * Roles as well as tags. A control is not always an `<a>` or a `<button>`: Command's rows are
+     * `<li role="option">`, and listing tags alone is how they stayed 36px through the sweep that
+     * measured everything else. They are the phone's route to every screen the five tabs cannot
+     * hold, so of all the controls in the app they were the wrong ones to miss.
+     */
     for (const el of document.querySelectorAll<HTMLElement>(
-      'a[href], button, input:not([type="checkbox"]), select, textarea',
+      'a[href], button, input:not([type="checkbox"]), select, textarea,' +
+        ' [role=option], [role=tab], [role=menuitem], [role=switch]',
     )) {
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) continue;
