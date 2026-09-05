@@ -153,7 +153,18 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 onMouseEnter={() => setActive(index)}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => void runCommand(command)}
-                className={`flex cursor-pointer items-center justify-between rounded-md px-3 py-2 text-[13px] ${selected ? 'bg-raised text-primary' : 'text-secondary'}`}
+                /*
+                 * `coarse:min-h-11` because this list is navigation on a phone.
+                 *
+                 * The tab bar holds five destinations and the app has ten, so Focus, Spaces and
+                 * Search are reached by opening Command and tapping a row -- and these rows were
+                 * 36px, which is the size the rest of the app stopped using when it was measured.
+                 * The sweep that fixed everything else missed them because it looked at
+                 * `a[href], button, input, select, textarea`, and an option in a listbox is an
+                 * `<li>`: the one navigation surface a phone depends on was the one the
+                 * measurement could not see.
+                 */
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-2 text-[13px] coarse:min-h-11 ${selected ? 'bg-raised text-primary' : 'text-secondary'}`}
               >
                 <span className="flex items-center gap-2">
                   {command.id === 'task:create' ? <Plus size={14} aria-hidden /> : null}

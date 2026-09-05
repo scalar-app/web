@@ -22,14 +22,27 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
  * These are the five somebody moves between all day. Settings is not one of them, so it sits in
  * the top bar instead: keeping it here would have cost the place Inbox needs, and Inbox is the
  * screen that accumulates work while you are not looking.
+ *
+ * By destination rather than by position in `primaryNav`. It was written as indices into that
+ * array -- `primaryNav[2]` annotated `// Inbox` -- and the array's order had moved underneath it,
+ * so the bar shipped Today, Focus, Ask, Inbox, Tasks: the comments described one set of five and
+ * the code rendered another. Calendar, named in the comment, was on no tab at all, which on a
+ * phone meant the week was reachable only by typing its name into Command.
+ *
+ * Nothing about a list of five off-by-one destinations looks wrong in a review, and no test could
+ * see it either, because none of them asserted where the tabs went. Naming the destinations puts
+ * the intent where it can be checked: the tests below assert this exact list, and a name that
+ * stops existing fails loudly at load rather than quietly rendering four tabs.
  */
-const TABS: readonly NavItem[] = [
-  primaryNav[0]!, // Today
-  primaryNav[2]!, // Inbox
-  primaryNav[1]!, // Ask
-  primaryNav[3]!, // Tasks
-  primaryNav[4]!, // Calendar
-];
+const TAB_HREFS = ['/today', '/inbox', '/ask', '/tasks', '/calendar'] as const;
+
+const TABS: readonly NavItem[] = TAB_HREFS.map((href) => {
+  const item = primaryNav.find((nav) => nav.href === href);
+  // A destination that has been renamed or removed, caught at startup rather than by rendering
+  // four tabs and a hole where the fifth was.
+  if (!item) throw new Error(`Tab bar names ${href}, which is not in primaryNav.`);
+  return item;
+});
 
 function Tab({ item, active, badge }: { item: NavItem; active: boolean; badge?: number }) {
   const Icon = item.icon;
