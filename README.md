@@ -24,7 +24,7 @@ cp .env.example .env.local
 pnpm dev
 ```
 
-Then start the API (`pnpm dev` in `../api`, see its README) and open `http://localhost:3000`. Sign in with any email; the API runs in development mode and shows the sign in link on screen because email delivery is not built yet.
+Then start the API (`pnpm dev` in `../api`, see its README) and open `http://localhost:3000`. Sign in with any email: in development, with no SMTP host configured, the API returns the sign in link and this app shows it on screen. Email delivery is implemented; configure `SMTP_HOST` on the API and the link is mailed instead, which is what a deployed install does.
 
 `next.config.ts` sets `turbopack.root` to the parent folder so Turbopack can resolve the linked packages. That override disappears once the packages come from npm.
 
@@ -62,7 +62,11 @@ Approve is never the default. It is not focused automatically, Enter in the comp
 
 Past conversations are reachable from History. Reopening one restores it, including its approval cards: a proposal you left pending is still approvable later, and one you already approved shows as done rather than offering itself again. Asking another question continues that same conversation; New starts a fresh one.
 
-Without `ANTHROPIC_API_KEY` on the API the page explains that Ask is not set up on this server, and the rest of Scalar works normally.
+Without a model configured on the API (`AI_PROVIDER` with `AI_API_KEY`) the page explains that Ask is not set up on this server, and the rest of Scalar works normally.
+
+What Ask cannot do is worth knowing, because the tool list is the whole surface: it cannot read your email or your inbox, read or create calendar events, create or delete a space or project, delete a task, start a focus session, or run the planner. Answers are not streamed.
+
+One thing it can do reads as more than it is. Approving a "schedule this task" card sets the time **inside Scalar**; nothing appears on a connected Google Calendar. The only path that writes to a real calendar is Plan my day, applied with the publish option.
 
 ## Scripts
 
@@ -70,7 +74,9 @@ Without `ANTHROPIC_API_KEY` on the API the page explains that Ask is not set up 
 
 ## Tests
 
-Unit tests for the time helpers, and component tests for `TaskRow`, `ApprovalCard` and `AskView`. The approval tests are the ones to keep passing: they pin down that a proposed change does nothing until somebody presses Approve. Critical journeys (sign in, create task, complete task, Today) are covered by the API integration suite today; Playwright end to end tests will be added when the API has an easy seeded fixture mode.
+Unit tests for the time helpers, and component tests for `TaskRow`, `ApprovalCard` and `AskView`. The approval tests are the ones to keep passing: they pin down that a proposed change does nothing until somebody presses Approve. Critical journeys (sign in, create task, complete task, Today) are covered by the API integration suite.
+
+`pnpm test:visual` runs Playwright against a real browser and a real build: `test/visual/` covers the sidebar, the mobile shell and navigation, touch target sizes and where dialogs actually appear. Those live there because jsdom has no layout, so a component test cannot see a breakpoint, a viewport width or a tap target, and will pass whatever the answer is.
 
 ## Status
 
@@ -78,7 +84,18 @@ Implemented: magic link sign in and sign out, session guard, Today (greeting, at
 
 Inbox (triage of anything captured but not filed: keep, file into a space, or dismiss) and Search (across tasks, events and spaces, with the term in the URL so a search can be linked to).
 
-Not implemented yet: task detail editing, space detail pages, notifications, onboarding and usage modes.
+Also implemented since: Focus, Notifications (a page and an unread count in the sidebar), data export from Settings, the workspace switcher with a members page and invitations, and asking before a plan is put on somebody's calendar.
+
+Not implemented, and each one is an API route with no way to reach it from here:
+
+- **Editing or deleting a task.** A task is write-once apart from the done checkbox: `QuickAddTask` posts a title, `TaskRow` accepts an `onSelect` that no view passes, and `useDeleteTask` has no callers. `PATCH` and `DELETE /api/v1/tasks/:id` accept title, description, space, project, priority, due date, schedule and estimate.
+- **Renaming, archiving or deleting a space.** `spaces.ts` exports `useSpaces` and `useCreateSpace` and nothing else.
+- **Projects.** No screen at all, so the projects Canvas creates are invisible here.
+- **Creating a calendar event.** Not this app's gap: the API has no write route for events, so Calendar is a read-only week list.
+- **Choosing what syncs.** Resources are discovered once, at connect time. A Canvas course added mid-term, a second Google calendar, or a Gmail label other than Starred cannot be selected without disconnecting and reconnecting.
+- **Connecting Google Calendar once anything else is connected.** The button lives only in the empty state, so it disappears as soon as any account exists. Gmail and Canvas have their own always-rendered panels.
+
+Also not built: space detail pages, onboarding and usage modes.
 
 ## Contributing
 
