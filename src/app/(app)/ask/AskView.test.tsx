@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import { AskView } from './AskView';
 
 const ask = vi.fn();
+const status = vi.fn();
 const approve = vi.fn();
 const reject = vi.fn();
 const listThreads = vi.fn();
@@ -21,6 +22,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/api', () => ({
   scalar: {
     command: {
+      status: () => status() as unknown,
       ask: (input: unknown) => ask(input) as unknown,
       approve: (id: string) => approve(id) as unknown,
       reject: (id: string) => reject(id) as unknown,
@@ -100,6 +102,8 @@ function wrapper({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   ask.mockReset();
+  status.mockReset();
+  status.mockResolvedValue({ configured: true, provider: 'anthropic' });
   approve.mockReset();
   reject.mockReset();
   listThreads.mockReset();
@@ -213,6 +217,34 @@ describe('AskView', () => {
 
     expect(await screen.findByText('what is due?')).toBeInTheDocument();
     expect(await screen.findByText(/Something went wrong answering that/)).toBeInTheDocument();
+  });
+
+  it('says the feature is off before a question is wasted on it', async () => {
+    status.mockResolvedValue({ configured: false, provider: null });
+    render(<AskView />, { wrapper });
+
+    expect(await screen.findByText('Ask is not set up on this server.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Ask Scalar')).not.toBeInTheDocument();
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it('does not hand a question over to a server that cannot answer it', async () => {
+    status.mockResolvedValue({ configured: false, provider: null });
+    searchParams = new URLSearchParams('q=what+is+due+today');
+    render(<AskView />, { wrapper });
+
+    expect(await screen.findByText('Ask is not set up on this server.')).toBeInTheDocument();
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it('still asks when the status check itself fails', async () => {
+    status.mockRejectedValue(new Error('offline'));
+    ask.mockResolvedValue(response());
+    render(<AskView />, { wrapper });
+
+    await userEvent.type(await screen.findByLabelText('Ask Scalar'), 'what is due today?{Enter}');
+
+    expect(await screen.findByText('Nothing is due today.')).toBeInTheDocument();
   });
 
   it('says the feature is not configured when the server has no key', async () => {

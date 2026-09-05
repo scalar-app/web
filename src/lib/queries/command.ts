@@ -11,6 +11,21 @@ export function isAiUnavailable(error: unknown): boolean {
   return isScalarApiError(error) && error.code === 'AI_UNAVAILABLE';
 }
 
+/**
+ * Whether this server can answer at all, and what it is talking to.
+ *
+ * Asked before the first question rather than discovered by failing one: on an installation with
+ * no model key, typing a question and watching it come back as an error is a worse way to learn
+ * that the feature is switched off than being told up front.
+ */
+export function useAiStatus() {
+  return useQuery({
+    queryKey: queryKeys.commandStatus,
+    queryFn: () => scalar.command.status(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useAsk() {
   const client = useQueryClient();
   return useMutation({

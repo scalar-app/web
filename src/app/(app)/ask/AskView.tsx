@@ -16,7 +16,7 @@ import { ApprovalCard } from '@/components/command/ApprovalCard';
 import { HistoryDialog } from '@/components/command/HistoryDialog';
 import { ErrorNotice } from '@/components/ErrorNotice';
 import { PageHeader } from '@/components/PageHeader';
-import { isAiUnavailable, useAsk, useLoadThread } from '@/lib/queries/command';
+import { isAiUnavailable, useAiStatus, useAsk, useLoadThread } from '@/lib/queries/command';
 
 interface Turn {
   id: string;
@@ -30,7 +30,7 @@ interface Turn {
 
 const SUGGESTIONS = [
   'What do I have due this week?',
-  'What does tomorrow look like?',
+  'What came in that I have not filed?',
   'Find me two free hours on Thursday',
 ];
 
@@ -81,14 +81,26 @@ function answerText(turn: Turn): string {
   return turn.answer ?? '';
 }
 
+function NotConfigured() {
+  return (
+    <>
+      <PageHeader title="Ask" description="Questions about your work, answered from your data." />
+      <EmptyState
+        title="Ask is not set up on this server."
+        description="Scalar Command needs a model API key. Add ANTHROPIC_API_KEY to the API environment and restart it. Everything else in Scalar works without one."
+      />
+    </>
+  );
+}
+
 /**
- * Ask is a conversation with a hard rule: reading happens automatically, changing never does.
- * Answers arrive as text; anything that would alter tasks or the calendar arrives as a card with
- * Approve and Dismiss, and stays inert until one is pressed.
+ * The conversation itself.
+ *
+ * It receives the handed over question as a prop rather than reading the router, so the gate above
+ * can withhold it until this server is known to be able to answer. `handedOver` arriving as a
+ * string is what triggers the one automatic send.
  */
-export function AskView({ initialQuestion }: { initialQuestion?: string }) {
-  const searchParams = useSearchParams();
-  const handedOver = initialQuestion ?? searchParams.get('q') ?? undefined;
+function AskConversation({ handedOver }: { handedOver?: string }) {
   const ask = useAsk();
   const [question, setQuestion] = useState('');
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -181,7 +193,7 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
     [mutateAsync],
   );
 
-  // A question handed over from the command palette is asked once, on arrival.
+  // A question handed over from the command palette is asked once, when it arrives.
   useEffect(() => {
     if (!handedOver || askedInitial.current) return;
     askedInitial.current = true;
@@ -201,17 +213,7 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
     }
   }
 
-  if (isAiUnavailable(ask.error)) {
-    return (
-      <>
-        <PageHeader title="Ask" description="Questions about your work, answered from your data." />
-        <EmptyState
-          title="Ask is not set up on this server."
-          description="Scalar Command needs a model API key. Add ANTHROPIC_API_KEY to the API environment and restart it. Everything else in Scalar works without one."
-        />
-      </>
-    );
-  }
+  if (isAiUnavailable(ask.error)) return <NotConfigured />;
 
   return (
     <>
@@ -268,8 +270,8 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
           {turns.length === 0 && !loadThread.isPending ? (
             <div className="mt-2">
               <p className="text-[13px] text-secondary">
-                Ask about your tasks and calendar. Scalar reads to answer, and asks before it
-                changes anything.
+                Ask about your tasks, calendar, spaces and projects, and about what has arrived and
+                is still unfiled. Scalar reads to answer, and asks before it changes anything.
               </p>
               <ul className="mt-4 flex flex-col gap-2">
                 {SUGGESTIONS.map((suggestion) => (
@@ -349,4 +351,25 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
       </div>
     </>
   );
+}
+
+/**
+ * Ask is a conversation with a hard rule: reading happens automatically, changing never does.
+ * Answers arrive as text; anything that would alter tasks or the calendar arrives as a card with
+ * Approve and Dismiss, and stays inert until one is pressed.
+ *
+ * This gate asks the server whether it can answer at all before the composer appears, so an
+ * installation with no model key says so rather than looking functional until the first question
+ * comes back as an error. A status check that itself fails is not proof of absence: only a
+ * definite "not configured" hides the conversation.
+ */
+export function AskView({ initialQuestion }: { initialQuestion?: string }) {
+  const searchParams = useSearchParams();
+  const handedOver = initialQuestion ?? searchParams.get('q') ?? undefined;
+  const status = useAiStatus();
+
+  if (status.data?.configured === false) return <NotConfigured />;
+  // The question is withheld until the answer is in, so it is never sent to a server that cannot
+  // answer it. The conversation renders straight away either way.
+  return <AskConversation {...(status.isPending ? {} : { handedOver })} />;
 }

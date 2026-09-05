@@ -1,8 +1,7 @@
 'use client';
 
 import { Panel } from '@scalar/ui';
-import { useQuery } from '@tanstack/react-query';
-import { scalar } from '@/lib/api';
+import { useAiStatus } from '@/lib/queries/command';
 
 /**
  * Which model vendor this server talks to.
@@ -20,11 +19,7 @@ const PROVIDER_LABEL: Record<string, string> = {
 };
 
 export function AiStatus() {
-  const status = useQuery({
-    queryKey: ['command', 'status'],
-    queryFn: () => scalar.command.status(),
-    staleTime: 5 * 60_000,
-  });
+  const status = useAiStatus();
 
   return (
     <Panel title="AI">
