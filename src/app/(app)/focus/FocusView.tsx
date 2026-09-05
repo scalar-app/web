@@ -155,10 +155,18 @@ function ActiveSession({ session }: { session: FocusSession }) {
       <p className="mt-3 text-[12px] text-muted">Discard ends this without recording the time.</p>
 
       {/* A way out that is not a decision about the work: the session keeps running, and Home
-          offers its way back. Quiet, because leaving should not be the obvious thing to do. */}
+          offers its way back. Quiet, because leaving should not be the obvious thing to do.
+
+          Quiet, but reachable. This screen asks the shell to remove itself, so on a phone there is
+          no top bar, no tab bar and no sidebar for the length of a session -- this link is the
+          only navigation on the entire screen, and it was an 18px line of text. Every other
+          control here is 44px, because they are `Button`s and the library sizes those for a
+          finger; a bare anchor gets no such help, and the one that matters most was the one
+          nothing had measured. `coarse:` asks the device rather than the width, so the desktop
+          keeps the quiet inline link it already had. */}
       <Link
         href="/today"
-        className="mt-10 text-[12px] text-muted underline-offset-4 hover:text-secondary hover:underline"
+        className="mt-10 inline-flex items-center px-3 text-[12px] text-muted underline-offset-4 hover:text-secondary hover:underline coarse:min-h-11"
       >
         Leave this open and go back
       </Link>

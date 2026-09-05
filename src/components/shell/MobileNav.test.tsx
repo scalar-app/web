@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { MobileTopBar } from './MobileNav';
+import { MobileTabBar, MobileTopBar } from './MobileNav';
 
 const context = vi.fn();
 const listWorkspaces = vi.fn();
@@ -103,5 +103,31 @@ describe('MobileTopBar', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Open command' }));
     expect(onOpenCommand).toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
+  });
+});
+
+/**
+ * The tab bar's five destinations.
+ *
+ * Where a tab *goes* is content rather than layout, so jsdom can be asked about it -- and it is
+ * worth asking, because the bar was built by indexing into `primaryNav` with positions that had
+ * drifted from the comments beside them. It rendered Focus where the comment said Inbox and left
+ * Calendar off the bar altogether, which on a phone put the week behind typing its name into
+ * Command. A list of five plausible destinations is exactly the kind of thing a reader's eye
+ * slides over.
+ *
+ * The visual suite checks the same five in a browser, where their size can also be measured. This
+ * one fails in a second rather than after a build.
+ */
+describe('MobileTabBar', () => {
+  beforeEach(() => {
+    notifications.mockReset().mockResolvedValue({ data: [], nextCursor: null, unreadCount: 0 });
+  });
+
+  it('goes to the five screens it claims to', async () => {
+    render(<MobileTabBar />, { wrapper });
+
+    const hrefs = (await screen.findAllByRole('link')).map((link) => link.getAttribute('href'));
+    expect(hrefs).toEqual(['/today', '/inbox', '/ask', '/tasks', '/calendar']);
   });
 });
