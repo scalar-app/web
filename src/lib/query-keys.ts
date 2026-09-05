@@ -22,6 +22,7 @@ export const queryKeys = {
   events: (from: string, to: string) => ['events', from, to] as const,
   integrations: ['integrations'] as const,
   search: (term: string) => ['search', term] as const,
+  commandStatus: ['command', 'status'] as const,
   commandThreads: ['command', 'threads'] as const,
   commandThread: (id: string) => ['command', 'threads', id] as const,
 } as const;
