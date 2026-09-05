@@ -226,6 +226,8 @@ describe('AskView', () => {
     expect(await screen.findByText('Ask is not set up on this server.')).toBeInTheDocument();
     expect(screen.queryByLabelText('Ask Scalar')).not.toBeInTheDocument();
     expect(ask).not.toHaveBeenCalled();
+    // The variable named here is the one the API actually reads; ANTHROPIC_API_KEY is deprecated.
+    expect(screen.getByText(/AI_PROVIDER/)).toBeInTheDocument();
   });
 
   it('does not hand a question over to a server that cannot answer it', async () => {

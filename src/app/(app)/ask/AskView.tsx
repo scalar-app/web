@@ -87,7 +87,7 @@ function NotConfigured() {
       <PageHeader title="Ask" description="Questions about your work, answered from your data." />
       <EmptyState
         title="Ask is not set up on this server."
-        description="Scalar Command needs a model API key. Add ANTHROPIC_API_KEY to the API environment and restart it. Everything else in Scalar works without one."
+        description="Scalar Command needs a model provider. Set AI_PROVIDER on the API, with AI_API_KEY for a hosted one or on its own for a local model, and restart it. Everything else in Scalar works without one."
       />
     </>
   );
@@ -359,9 +359,11 @@ function AskConversation({ handedOver }: { handedOver?: string }) {
  * Approve and Dismiss, and stays inert until one is pressed.
  *
  * This gate asks the server whether it can answer at all before the composer appears, so an
- * installation with no model key says so rather than looking functional until the first question
+ * installation with no provider says so rather than looking functional until the first question
  * comes back as an error. A status check that itself fails is not proof of absence: only a
- * definite "not configured" hides the conversation.
+ * definite "not configured" hides the conversation, so a network blip does not take Ask away from
+ * someone whose server is fine. The cost of that choice is that a handed over question is still
+ * sent when the check fails, and the answer to it is where the person learns the feature is off.
  */
 export function AskView({ initialQuestion }: { initialQuestion?: string }) {
   const searchParams = useSearchParams();
@@ -369,7 +371,7 @@ export function AskView({ initialQuestion }: { initialQuestion?: string }) {
   const status = useAiStatus();
 
   if (status.data?.configured === false) return <NotConfigured />;
-  // The question is withheld until the answer is in, so it is never sent to a server that cannot
-  // answer it. The conversation renders straight away either way.
+  // The question is withheld while the check is still in flight, so a server that answers "not
+  // configured" never receives it. The conversation renders straight away either way.
   return <AskConversation {...(status.isPending ? {} : { handedOver })} />;
 }
